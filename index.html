@@ -1,0 +1,1680 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Peringatan Tarikh Lahir — SK Kiandongo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#f0efe8;--bg2:#e8e7df;--surface:#fff;--surface2:#f7f6f0;
+  --border:#e2e1d8;--border2:#d4d3ca;
+  --text:#1c1b18;--text2:#6b6a62;--text3:#9b9a92;
+  --accent:#2d6a4f;--accent2:#40916c;--accent-bg:#d8f3dc;--accent-border:#b7e4c7;
+  --info:#1d4ed8;--info-bg:#eff6ff;--info-border:#bfdbfe;
+  --purple:#7e22ce;--purple-bg:#fdf4ff;--purple-border:#e9d5ff;
+  --warn:#c2410c;--warn-bg:#fff7ed;--warn-border:#fed7aa;
+  --today:#92400e;--today-bg:#fef3c7;--today-border:#fde68a;
+  --shadow:0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,0.08),0 2px 4px rgba(0,0,0,0.04);
+  --r:12px;--r-sm:8px;--r-lg:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.5}
+input,select,textarea{outline:none;font-family:inherit}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)!important;box-shadow:0 0 0 3px rgba(45,106,79,0.12)}
+button{transition:all 0.15s ease;font-family:inherit}
+button:active{transform:scale(0.97)}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+/* Header */
+.app-header{background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
+.app-header-inner{max-width:780px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.app-logo{display:flex;align-items:center;gap:10px}
+.app-logo-icon{width:36px;height:36px;background:linear-gradient(135deg,#2d6a4f,#40916c);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 2px 8px rgba(45,106,79,0.3)}
+.app-title{font-size:15px;font-weight:700;color:var(--text);letter-spacing:-0.3px}
+.app-subtitle{font-size:11px;color:var(--text2);margin-top:1px}
+
+/* Tab nav */
+.tab-nav{background:var(--surface);border-bottom:1px solid var(--border)}
+.tab-nav-inner{max-width:780px;margin:0 auto;padding:0 16px;display:flex}
+.tab-btn{background:transparent;border:none;border-bottom:2.5px solid transparent;padding:11px 14px;font-size:13px;font-weight:500;font-family:inherit;color:var(--text3);cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:5px;margin-bottom:-1px;white-space:nowrap}
+.tab-btn:hover{color:var(--text);background:var(--bg)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:700}
+
+/* Metric cards */
+.metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+.metric-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:transform 0.15s,box-shadow 0.15s}
+.metric-card:hover{transform:translateY(-1px);box-shadow:var(--shadow-md)}
+.metric-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;border-radius:2px 2px 0 0}
+.mc-blue::before{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+.mc-green::before{background:linear-gradient(90deg,#2d6a4f,#40916c)}
+.mc-amber::before{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+.mc-orange::before{background:linear-gradient(90deg,#f97316,#fb923c)}
+.metric-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:10px}
+.mi-blue{background:#eff6ff}
+.mi-green{background:var(--accent-bg)}
+.mi-amber{background:#fffbeb}
+.mi-orange{background:#fff7ed}
+.metric-label{font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:3px}
+.metric-value{font-size:26px;font-weight:800;letter-spacing:-1px;line-height:1}
+.mv-blue{color:#3b82f6}.mv-green{color:#2d6a4f}.mv-amber{color:#d97706}.mv-orange{color:#f97316}
+.metric-sub{font-size:10px;color:var(--text3);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Today banner */
+.today-banner{background:linear-gradient(135deg,#92400e,#b45309);border-radius:var(--r-lg);padding:16px 18px;margin-bottom:18px;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden;box-shadow:0 4px 16px rgba(146,64,14,0.25)}
+.today-banner::after{content:"🎂";position:absolute;right:-8px;top:50%;transform:translateY(-50%);font-size:72px;opacity:0.12;line-height:1;pointer-events:none}
+.today-banner-title{font-size:14px;font-weight:700;color:#fff;margin-bottom:3px}
+.today-banner-sub{font-size:11px;color:rgba(255,255,255,0.75)}
+.today-banner-btn{background:#fff;color:#92400e;border:none;padding:8px 16px;border-radius:var(--r-sm);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background 0.15s}
+.today-banner-btn:hover{background:#fef3c7}
+.today-banner-btn:disabled{opacity:0.6;cursor:not-allowed}
+
+/* Section header */
+.section-hdr{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.section-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.dot-red{background:#ef4444}
+.dot-green{background:#40916c}
+.section-title{font-size:13px;font-weight:700;color:var(--text)}
+.section-count{background:var(--bg2);color:var(--text2);font-size:11px;font-weight:600;padding:1px 8px;border-radius:20px;margin-left:auto}
+
+/* Birthday card */
+.bday-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px 15px;margin-bottom:9px;box-shadow:var(--shadow);transition:all 0.15s;position:relative;overflow:hidden}
+.bday-card:hover{border-color:var(--border2);box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.bday-card.is-today{border-color:var(--today-border)}
+.bday-card.is-today::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,#f59e0b,#d97706)}
+.bday-avatar{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0}
+.bday-name{font-weight:700;font-size:14px;color:var(--text);letter-spacing:-0.2px}
+.bday-meta{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:2px}
+.role-badge{font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px}
+.rb-guru{background:#eff6ff;color:#1d4ed8}
+.rb-staf{background:var(--accent-bg);color:var(--accent)}
+.rb-murid{background:var(--purple-bg);color:var(--purple)}
+.bday-actions{display:flex;gap:5px;margin-top:10px;padding-top:9px;border-top:1px solid var(--border);flex-wrap:wrap}
+.pill{font-size:11px;font-weight:600;font-family:inherit;padding:5px 11px;border-radius:20px;border:1px solid;cursor:pointer;transition:all 0.15s;display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+.pill:disabled{opacity:0.5;cursor:not-allowed}
+.pill-tg{background:var(--info-bg);color:var(--info);border-color:var(--info-border)}
+.pill-tg:hover:not(:disabled){background:#dbeafe}
+.pill-wa{background:var(--accent-bg);color:var(--accent);border-color:var(--accent-border)}
+.pill-wa:hover:not(:disabled){background:#b7e4c7}
+.pill-wag{background:var(--purple-bg);color:var(--purple);border-color:var(--purple-border)}
+.pill-wag:hover:not(:disabled){background:#e9d5ff}
+.pill-edit{background:var(--surface2);color:var(--text2);border-color:var(--border)}
+.pill-edit:hover{background:var(--bg2)}
+.pill-del{background:transparent;color:#b91c1c;border-color:#fca5a5}
+.pill-del:hover{background:#fff0f0}
+
+/* Countdown badge */
+.cbadge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap;border:1px solid}
+.cb-today{background:var(--today-bg);color:var(--today);border-color:var(--today-border)}
+.cb-soon{background:var(--info-bg);color:var(--info);border-color:var(--info-border)}
+.cb-upcoming{background:var(--bg2);color:var(--text2);border-color:var(--border)}
+
+/* Row item (senarai) */
+.row-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:11px 13px;margin-bottom:8px;box-shadow:var(--shadow);transition:all 0.15s}
+.row-item:hover{border-color:var(--border2);box-shadow:var(--shadow-md)}
+
+/* Empty state */
+.empty-state{text-align:center;padding:44px 16px}
+.empty-icon{font-size:36px;margin-bottom:10px;opacity:0.35}
+.empty-title{font-size:14px;font-weight:600;color:var(--text2);margin-bottom:5px}
+.empty-sub{font-size:12px;color:var(--text3)}
+
+/* Upload zone */
+.upload-zone{border:2px dashed var(--border2);border-radius:var(--r-lg);padding:28px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--surface);margin-bottom:12px}
+.upload-zone:hover{border-color:var(--accent);background:var(--accent-bg)}
+
+/* Buttons */
+.btn-primary{background:var(--accent);color:#fff;border:none;padding:9px 20px;border-radius:var(--r-sm);font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;transition:all 0.15s}
+.btn-primary:hover{background:var(--accent2);box-shadow:0 4px 12px rgba(45,106,79,0.3)}
+.btn-secondary{background:var(--surface);color:var(--text);border:1.5px solid var(--border);padding:8px 16px;border-radius:var(--r-sm);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.15s}
+.btn-secondary:hover{border-color:var(--border2);background:var(--bg)}
+.btn-dark{background:var(--text);color:#fff;border:none;padding:9px 18px;border-radius:var(--r-sm);font-size:13px;font-weight:700;font-family:inherit;cursor:pointer}
+.btn-dark:hover{background:#333}
+
+/* Preview table */
+.preview-table{width:100%;border-collapse:collapse;font-size:12px}
+.preview-table th{background:var(--surface2);padding:7px 10px;text-align:left;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--text2);border-bottom:1px solid var(--border)}
+.preview-table td{padding:7px 10px;border-bottom:1px solid var(--border);color:var(--text)}
+.preview-table tr:hover td{background:var(--bg)}
+.badge-ok{background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-border);padding:1px 7px;border-radius:20px;font-size:10px;font-weight:700}
+.badge-err{background:#fff0f0;color:#b91c1c;border:1px solid #fca5a5;padding:1px 7px;border-radius:20px;font-size:10px;font-weight:700}
+
+/* Settings */
+.settings-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px;margin-bottom:12px;box-shadow:var(--shadow)}
+
+/* Log */
+.log-box{background:#0f172a;border-radius:var(--r-sm);padding:10px 12px;font-family:'DM Mono',monospace;font-size:11px;max-height:180px;overflow-y:auto;line-height:1.8}
+.log-ok{color:#4ade80}.log-err{color:#f87171}.log-info{color:#93c5fd}.log-warn{color:#fbbf24}
+.log-time{color:#475569;margin-right:6px}
+
+/* Toast */
+.toast{position:sticky;top:8px;z-index:99;border-radius:var(--r-sm);padding:9px 14px;margin-bottom:10px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;box-shadow:var(--shadow-md);animation:slideIn 0.2s ease}
+.toast-ok{background:#f0fdf4;color:#15803d;border:1px solid var(--accent-border)}
+.toast-err{background:#fff0f0;color:#b91c1c;border:1px solid #fca5a5}
+
+/* Group row */
+.group-row{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;transition:background 0.1s}
+.group-row:hover{background:var(--bg)}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:200;padding:12px}
+.modal-box{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border2);box-shadow:0 20px 60px rgba(0,0,0,0.15)}
+
+/* Animations */
+@keyframes slideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
+.fade-up{animation:fadeUp 0.2s ease forwards}
+.pulse{animation:pulse 2s infinite}
+
+/* Dark mode */
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#131312;--bg2:#1c1c1a;--surface:#1f1f1d;--surface2:#252523;
+    --border:#2e2e2b;--border2:#3a3a36;
+    --text:#e8e7e2;--text2:#8b8a82;--text3:#5a5a54;
+    --accent:#52b788;--accent2:#74c69d;--accent-bg:#1a2e22;--accent-border:#2d4a38;
+    --info-bg:#0f1d3d;--info-border:#1e3a6e;
+    --purple-bg:#1a0f2e;--purple-border:#3d1f6e;
+    --warn-bg:#2a1a0a;--warn-border:#5a3010;
+    --today-bg:#2a1f00;--today-border:#5a4400;
+    --shadow:0 1px 3px rgba(0,0,0,0.3);--shadow-md:0 4px 12px rgba(0,0,0,0.4);
+  }
+  .app-header,.tab-nav{background:rgba(19,19,18,0.96)}
+  .today-banner{background:linear-gradient(135deg,#78350f,#92400e)}
+  .today-banner-btn{color:#78350f}
+  .bday-card.is-today{background:linear-gradient(to right,#2a1f00,var(--surface))}
+  .modal-box{background:var(--surface);border-color:var(--border2)}
+  input,select,textarea{background:var(--surface)!important;color:var(--text)!important;border-color:var(--border)!important}
+  .preview-table th{background:var(--surface2)!important}
+  .preview-table tr:hover td{background:var(--bg2)!important}
+  .upload-zone:hover{border-color:var(--accent)!important;background:var(--accent-bg)!important}
+  .toast-ok{background:#1a2e22;color:var(--accent);border-color:var(--accent-border)}
+  .lock-screen{background:#0f0f0e!important}
+  .lock-card{background:#1f1f1d!important;border-color:#3a3a36!important}
+  .pin-dot{background:#3a3a36!important}
+  .pin-dot.filled{background:var(--accent)!important}
+  .pin-key{background:#252523!important;color:#e8e7e2!important;border-color:#3a3a36!important}
+  .pin-key:hover{background:#2e2e2b!important}
+  .session-bar{background:#1f1f1d!important;border-color:#3a3a36!important}
+}
+
+/* ── LOCK SCREEN ── */
+.lock-screen{position:fixed;inset:0;background:#f0efe8;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1000;padding:20px}
+.lock-card{background:#fff;border:1px solid #e2e1d8;border-radius:20px;padding:32px 28px;width:min(340px,96vw);box-shadow:0 8px 32px rgba(0,0,0,0.1);text-align:center}
+.lock-icon{width:64px;height:64px;background:linear-gradient(135deg,#2d6a4f,#40916c);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 16px;box-shadow:0 4px 12px rgba(45,106,79,0.3)}
+.lock-title{font-size:18px;font-weight:800;color:#1c1b18;letter-spacing:-0.5px;margin-bottom:4px}
+.lock-sub{font-size:12px;color:#9b9a92;margin-bottom:24px}
+.pin-dots{display:flex;justify-content:center;gap:12px;margin-bottom:24px}
+.pin-dot{width:14px;height:14px;border-radius:50%;background:#e2e1d8;transition:all 0.2s}
+.pin-dot.filled{background:#2d6a4f;transform:scale(1.15)}
+.pin-dot.error{background:#ef4444;animation:shake 0.3s ease}
+.pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.pin-key{background:#f7f6f0;border:1px solid #e2e1d8;border-radius:12px;height:52px;font-size:20px;font-weight:700;font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#1c1b18;cursor:pointer;transition:all 0.1s;display:flex;align-items:center;justify-content:center}
+.pin-key:hover{background:#e8e7df;transform:scale(0.97)}
+.pin-key:active{background:#d8f3dc;transform:scale(0.93)}
+.pin-key.del{font-size:16px;color:#6b6a62}
+.pin-key.del:hover{background:#fff0f0;color:#b91c1c}
+.pin-error{font-size:12px;color:#ef4444;font-weight:600;min-height:18px;margin-bottom:4px;animation:shake 0.3s ease}
+.pin-hint{font-size:11px;color:#9b9a92;margin-top:8px}
+.lock-footer{margin-top:20px;font-size:11px;color:#9b9a92;text-align:center}
+
+/* ── GOOGLE SSO ── */
+.sso-divider{display:flex;align-items:center;gap:12px;margin:16px 0;color:#9b9a92;font-size:12px}
+.sso-divider::before,.sso-divider::after{content:"";flex:1;height:1px;background:#e2e1d8}
+.google-btn{width:100%;padding:11px 16px;background:#fff;border:1.5px solid #e2e1d8;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:14px;font-weight:600;font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#1c1b18;cursor:pointer;transition:all 0.15s;margin-bottom:8px}
+.google-btn:hover{background:#f7f6f0;border-color:#d4d3ca;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.google-btn:active{transform:scale(0.98)}
+.google-icon{width:20px;height:20px;flex-shrink:0}
+.sso-user-card{background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.sso-user-avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0}
+.sso-user-avatar-placeholder{width:36px;height:36px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0}
+.sso-user-name{font-size:13px;font-weight:700;color:var(--accent)}
+.sso-user-email{font-size:11px;color:var(--text3)}
+.auth-mode-tabs{display:flex;gap:6px;margin-bottom:18px;background:var(--bg2);border-radius:10px;padding:4px}
+.auth-tab{flex:1;padding:7px;border:none;border-radius:7px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;transition:all 0.15s;background:transparent;color:var(--text3)}
+.auth-tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.client-id-badge{background:#fffbeb;border:1px solid #fde68a;border-radius:7px;padding:8px 10px;margin-bottom:14px;font-size:11px;color:#92400e;line-height:1.6}
+.client-id-badge code{background:#fff;padding:1px 5px;border-radius:4px;font-family:'DM Mono',monospace;font-size:10px;word-break:break-all}
+
+/* ── SESSION BAR ── */
+.session-bar{background:#fff;border-bottom:1px solid #e2e1d8;padding:4px 16px;display:flex;align-items:center;justify-content:space-between;max-width:780px;margin:0 auto;font-size:11px;color:#9b9a92}
+.session-timer{display:flex;align-items:center;gap:5px;font-weight:600}
+.session-timer.warn{color:#c2410c}
+.session-dot{width:6px;height:6px;border-radius:50%;background:#40916c}
+.session-dot.warn{background:#f97316;animation:pulse 1s infinite}
+
+/* ── EXPORT BUTTON ── */
+.export-btn{background:var(--surface2);color:var(--text2);border:1px solid var(--border);padding:6px 12px;border-radius:var(--r-sm);font-size:11px;font-weight:600;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all 0.15s}
+.export-btn:hover{background:var(--bg2);border-color:var(--border2)}
+
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef}=React;
+
+const MONTHS_FULL=["Januari","Februari","Mac","April","Mei","Jun","Julai","Ogos","September","Oktober","November","Disember"];
+const ROLES=["Guru","Staf Sokongan","Murid"];
+const PALETTE=["#4A90D9","#7B68EE","#20B2AA","#E87E3E","#9370DB","#3CB371","#CD853F","#DA70D6"];
+
+function initials(n){return n.split(" ").slice(0,2).map(w=>w[0]||"").join("").toUpperCase()}
+function avatarColor(n){let h=0;for(let c of n)h=(h*31+c.charCodeAt(0))&0xffffffff;return PALETTE[Math.abs(h)%PALETTE.length]}
+function daysUntil(dob){
+  const today=new Date(),b=new Date(dob);
+  const next=new Date(today.getFullYear(),b.getMonth(),b.getDate());
+  if(next<today)next.setFullYear(today.getFullYear()+1);
+  if(next.toDateString()===today.toDateString())return 0;
+  return Math.ceil((next-today)/86400000);
+}
+function getAge(dob){
+  const t=new Date(),b=new Date(dob);
+  let a=t.getFullYear()-b.getFullYear();
+  const m=t.getMonth()-b.getMonth();
+  if(m<0||(m===0&&t.getDate()<b.getDate()))a--;
+  return a;
+}
+function fmtDate(dob){const d=new Date(dob);return`${d.getDate()} ${MONTHS_FULL[d.getMonth()]}`}
+function fmtNow(){const d=new Date();return`${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}`}
+
+function buildMsg(c){
+  const a=getAge(c.dob)+1;
+  const emoji=c.role==="Murid"?"🎒":"🎓";
+  const panggilan=c.role==="Murid"?"murid kami":"rakan sekerja kami";
+  return`🎂 *SELAMAT HARI LAHIR!*\n\n${emoji} *${c.name}*\n_${c.role}${c.notes?" — "+c.notes:""}_\n\nHari ini ${panggilan} yang istimewa menyambut ulang tahun kelahiran yang ke-*${a}*! 🎉\n\nSemoga panjang umur, murah rezeki, dikekalkan kesihatan yang baik, dan sentiasa berada dalam rahmat Allah SWT.\n\n_Daripada seluruh warga SK Kiandongo_ 🌟`;
+}
+
+function buildReminderMsg(c,days){
+  const a=getAge(c.dob)+1;
+  const d=new Date(c.dob);
+  return`📅 *PERINGATAN HARI LAHIR*\n\n⏰ ${days} hari lagi!\n\n*${c.name}* (${c.role}) akan menyambut hari lahir ke-*${a}* pada *${d.getDate()} ${MONTHS_FULL[d.getMonth()]}*.\n\nSediakan ucapan dan kejutan! 🎁\n\n_— SK Kiandongo_`;
+}
+
+function parseDate(raw){
+  if(!raw)return"";
+  if(raw instanceof Date&&!isNaN(raw)){
+    const y=raw.getFullYear(),m=String(raw.getMonth()+1).padStart(2,"0"),d=String(raw.getDate()).padStart(2,"0");
+    return`${y}-${m}-${d}`;
+  }
+  const s=String(raw).trim();
+  if(!s||s==="0")return"";
+  if(/^\d{4,5}$/.test(s)&&parseInt(s)>1000){
+    const d=new Date((parseInt(s)-25569)*86400000);
+    if(!isNaN(d)&&d.getFullYear()>1900)return d.toISOString().slice(0,10);
+  }
+  if(/^\d{4}[-/.]\d{1,2}[-/.]\d{1,2}$/.test(s)){const p=s.split(/[-/.]/);return`${p[0]}-${p[1].padStart(2,"0")}-${p[2].padStart(2,"0")}`}
+  if(/^\d{1,2}[-/.]\d{1,2}[-/.]\d{4}$/.test(s)){const p=s.split(/[-/.]/);return`${p[2]}-${p[1].padStart(2,"0")}-${p[0].padStart(2,"0")}`}
+  if(/^\d{1,2}[-/.]\d{1,2}[-/.]\d{2}$/.test(s)){const p=s.split(/[-/.]/);const yr=parseInt(p[2]);return`${yr<50?"20":"19"}${p[2]}-${p[1].padStart(2,"0")}-${p[0].padStart(2,"0")}`}
+  const bmap={"januari":"01","februari":"02","mac":"03","march":"03","april":"04","mei":"05","may":"05","jun":"06","june":"06","julai":"07","july":"07","ogos":"08","august":"08","september":"09","oktober":"10","october":"10","november":"11","disember":"12","december":"12"};
+  const m2=s.toLowerCase().match(/^(\d{1,2})\s+(\w+)\s+(\d{4})$/);
+  if(m2&&bmap[m2[2]])return`${m2[3]}-${bmap[m2[2]]}-${String(m2[1]).padStart(2,"0")}`;
+  const d=new Date(s);
+  if(!isNaN(d)&&d.getFullYear()>1900)return d.toISOString().slice(0,10);
+  return"";
+}
+
+function normalizeRole(r){
+  if(!r)return"Guru";
+  const v=String(r).trim().toLowerCase();
+  if(v.includes("staf")||v.includes("staff")||v.includes("sokongan")||v.includes("support"))return"Staf Sokongan";
+  if(v.includes("murid")||v.includes("pelajar")||v.includes("student")||v.includes("pupil")||v.includes("siswa"))return"Murid";
+  return"Guru";
+}
+
+function rowToContact(row){
+  const keys=Object.keys(row);
+  const vals=Object.values(row);
+  const clean=(s)=>String(s).toLowerCase().replace(/\([^)]*\)/g,"").replace(/[\s\-_\/]/g,"").trim();
+  const find=(...keywords)=>{
+    for(const kw of keywords){const kw2=clean(kw);for(const rk of keys){if(clean(rk)===kw2)return row[rk]}}
+    for(const kw of keywords){const kw2=clean(kw);for(const rk of keys){const rk2=clean(rk);if(rk2.includes(kw2)||kw2.includes(rk2))return row[rk]}}
+    return"";
+  };
+  let name=String(find("nama","name","fullname","namapenuh","namapelajar","namamurid","namaguru")||"").trim();
+  let dobRaw=find("tarikh lahir","tarikhLahir","tarikhahir","tarikh_lahir","dob","dateofbirth","birthday","lahir","born","birthdate","tlahir","tarikh");
+  let role=find("peranan","role","jawatan","position","kategori","category","jenis","type","kumpulan");
+  let phone=String(find("nombor telefon","nombortelefon","telefon","phone","tel","nombor","notelefon","hp","mobile","handphone","phonenumber","nohp")||"").trim().replace(/[\s\-]/g,"");
+  let notes=String(find("nota","notes","catatan","remark","remarks","maklumat","info","kelas","class","tingkatan","tahun")||"").trim();
+  if(!name){for(const v of vals){const s=String(v||"").trim();if(s&&s.length>2&&isNaN(s)){name=s;break}}}
+  if(!dobRaw){for(const rk of keys){const v=row[rk];if(!v)continue;const s=String(v).trim();if(/\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}/.test(s)||/^\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}$/.test(s)||(/^\d{4,5}$/.test(s)&&parseInt(s)>10000)||v instanceof Date){dobRaw=v;break}}}
+  const dob=parseDate(dobRaw);
+  const valid=!!name&&!!dob&&!isNaN(new Date(dob));
+  return{name,dob,role:normalizeRole(role),phone,notes,valid,_keys:keys.join(",")};
+}
+
+function downloadTemplate(){
+  const header="Nama,Tarikh Lahir (DD/MM/YYYY),Peranan,Nombor Telefon,Nota\n";
+  const rows=["Ahmad bin Ali,15/05/1985,Guru,601112345678,Guru Matematik","Siti binti Hassan,23/08/1990,Staf Sokongan,601234567890,","Muhammad Aiman,10/03/2010,Murid,,"].join("\n");
+  const blob=new Blob(["\uFEFF"+header+rows],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");a.href=url;a.download="template-senarai-kenalan.csv";a.click();URL.revokeObjectURL(url);
+}
+
+const CKEY="bday-v8-contacts",SKEY="bday-v8-settings",PINKEY="bday-v8-pin",SESSKEY="bday-v8-sess",GKEY="bday-v8-guser";
+
+// ── KONFIGURASI GOOGLE SSO ────────────────────────────────────
+// Gantikan dengan Client ID dari Google Cloud Console anda
+// Panduan: https://console.cloud.google.com/apis/credentials
+const GOOGLE_CLIENT_ID = "MASUKKAN_CLIENT_ID_ANDA.apps.googleusercontent.com";
+
+// Senarai emel yang dibenarkan log masuk (kosongkan untuk benarkan semua)
+// Contoh: ["guru@sk-kiandongo.edu.my", "pengetua@sk-kiandongo.edu.my"]
+const EMEL_DIBENARKAN = [];
+const SESSION_TIMEOUT=15*60*1000; // 15 minit
+const MAX_ATTEMPTS=5;
+const LOCKOUT_DURATION=5*60*1000; // 5 minit kunci
+
+function load(k,def){try{const v=localStorage.getItem(k);return v?JSON.parse(v):def}catch{return def}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
+
+// ── Fungsi keselamatan PIN ────────────────────────────────────
+function hashPin(pin){
+  // Hash mudah (bukan kriptografi - hanya untuk kegunaan dalaman)
+  let h=0;
+  for(let i=0;i<pin.length;i++){h=(Math.imul(31,h)+pin.charCodeAt(i))|0}
+  return h.toString(36)+"_"+pin.length;
+}
+function getSavedPin(){return localStorage.getItem(PINKEY)||null}
+function savePin(pin){localStorage.setItem(PINKEY,hashPin(pin))}
+function verifyPin(pin){
+  const saved=getSavedPin();
+  if(!saved)return true; // Tiada PIN — lulus
+  return hashPin(pin)===saved;
+}
+function clearSession(){localStorage.removeItem(SESSKEY)}
+function startSession(){localStorage.setItem(SESSKEY,Date.now().toString())}
+function isSessionValid(){
+  const t=localStorage.getItem(SESSKEY);
+  if(!t)return false;
+  return(Date.now()-parseInt(t))<SESSION_TIMEOUT;
+}
+function refreshSession(){if(isSessionValid())localStorage.setItem(SESSKEY,Date.now().toString())}
+
+// ── Log audit ─────────────────────────────────────────────────
+function logAudit(action){
+  try{
+    const logs=JSON.parse(localStorage.getItem("bday-audit")||"[]");
+    logs.unshift({time:new Date().toISOString(),action});
+    localStorage.setItem("bday-audit",JSON.stringify(logs.slice(0,50)));
+  }catch{}
+}
+
+// ── Fungsi Google SSO ────────────────────────────────────────
+function getSSOUser(){try{const v=localStorage.getItem(GKEY);return v?JSON.parse(v):null}catch{return null}}
+function saveSSOUser(u){try{localStorage.setItem(GKEY,JSON.stringify(u))}catch{}}
+function clearSSOUser(){localStorage.removeItem(GKEY)}
+function isSSOConfigured(){return GOOGLE_CLIENT_ID&&!GOOGLE_CLIENT_ID.includes("MASUKKAN")}
+function isEmelDibenarkan(email){
+  if(!email)return false;
+  if(EMEL_DIBENARKAN.length===0)return true; // benarkan semua jika senarai kosong
+  return EMEL_DIBENARKAN.some(e=>e.toLowerCase()===email.toLowerCase());
+}
+
+const DEF_SETTINGS={tgToken:"",tgChatId:"",tgTopicId:"",fonnteToken:"",waGroupId:"",waGroupName:"",hariAwal:"7"};
+
+function App(){
+  const [contacts,setContacts]=useState(()=>load(CKEY,[]));
+  const [settings,setSettings]=useState(()=>load(SKEY,DEF_SETTINGS));
+  const [tab,setTab]=useState("dashboard");
+  const [modal,setModal]=useState(null);
+  const [toast,setToast]=useState(null);
+  const [search,setSearch]=useState("");
+  const [roleF,setRoleF]=useState("Semua");
+  const [sending,setSending]=useState({});
+  const [autoLog,setAutoLog]=useState([]);
+  const [autoRunning,setAutoRunning]=useState(false);
+
+  // ── State keselamatan ──────────────────────────────────────
+  const [ssoUser,setSsoUser]=useState(()=>getSSOUser());
+  const [authMode,setAuthMode]=useState(()=>isSSOConfigured()?"google":"pin"); // "google" | "pin"
+  const hasSSOActive=isSSOConfigured()&&!!getSSOUser()&&isSessionValid();
+  const [locked,setLocked]=useState(()=>{
+    if(isSSOConfigured()&&getSSOUser()){return !isSessionValid()}
+    return !!getSavedPin()&&!isSessionValid();
+  });
+  const [hasPin,setHasPin]=useState(()=>!!getSavedPin());
+  const [pinInput,setPinInput]=useState("");
+  const [pinError,setPinError]=useState("");
+  const [pinAttempts,setPinAttempts]=useState(()=>parseInt(sessionStorage.getItem("pin-attempts")||"0"));
+  const [lockedOut,setLockedOut]=useState(()=>{
+    const t=sessionStorage.getItem("lockout-time");
+    return t&&(Date.now()-parseInt(t))<LOCKOUT_DURATION;
+  });
+  const [sessionLeft,setSessionLeft]=useState(SESSION_TIMEOUT);
+  const [setupPin,setSetupPin]=useState(false);
+  const [newPin,setNewPin]=useState("");
+  const [newPinStep,setNewPinStep]=useState(1); // 1=masuk PIN baru, 2=sahkan
+
+  // ── Timer sesi ────────────────────────────────────────────
+  useEffect(()=>{
+    if(!hasPin)return;
+    const interval=setInterval(()=>{
+      refreshSession();
+      const t=localStorage.getItem(SESSKEY);
+      if(t){
+        const remaining=SESSION_TIMEOUT-(Date.now()-parseInt(t));
+        setSessionLeft(Math.max(0,remaining));
+        if(remaining<=0){setLocked(true);clearSession();logAudit("Sesi tamat — dikunci automatik")}
+      }
+    },10000);
+    return()=>clearInterval(interval);
+  },[hasPin]);
+
+  // ── Kemas kini sesi semasa interaksi ─────────────────────
+  useEffect(()=>{
+    if(locked||!hasPin)return;
+    const refresh=()=>refreshSession();
+    document.addEventListener("click",refresh);
+    document.addEventListener("keydown",refresh);
+    return()=>{document.removeEventListener("click",refresh);document.removeEventListener("keydown",refresh)};
+  },[locked,hasPin]);
+
+  const showToast=(msg,type="ok")=>{setToast({msg,type});setTimeout(()=>setToast(null),4500)};
+  const saveC=list=>{setContacts(list);save(CKEY,list);logAudit(`Data dikemas kini — ${list.length} kenalan`)};
+  const saveS=s=>{setSettings(s);save(SKEY,s);logAudit("Tetapan disimpan")};
+  const addLog=(msg,type="info")=>setAutoLog(prev=>[...prev,{time:fmtNow(),msg,type}].slice(-50));
+
+  // ── Log keluar ───────────────────────────────────────────
+  const doLogout=()=>{
+    clearSession();
+    if(isSSOConfigured()&&ssoUser){
+      clearSSOUser();
+      setSsoUser(null);
+      // Revoke Google token
+      if(window.google&&ssoUser.token){
+        window.google.accounts.id.revoke(ssoUser.email,()=>{});
+      }
+    }
+    setPinInput("");
+    setPinError("");
+    setLocked(true);
+    logAudit("Log keluar — "+((isSSOConfigured()&&ssoUser)?ssoUser.email:"PIN"));
+    showToast("Anda telah log keluar");
+  };
+
+  // ── Google SSO callback ──────────────────────────────────
+  const handleGoogleLogin=React.useCallback((response)=>{
+    try{
+      // Decode JWT token dari Google
+      const payload=JSON.parse(atob(response.credential.split(".")[1]));
+      const email=payload.email||"";
+      const name=payload.name||email;
+      const picture=payload.picture||"";
+      const domain=email.split("@")[1]||"";
+
+      if(!isEmelDibenarkan(email)){
+        setPinError(`Emel ${email} tidak dibenarkan. Sila hubungi pentadbir.`);
+        logAudit(`SSO ditolak: ${email} (tidak dibenarkan)`);
+        return;
+      }
+
+      const user={email,name,picture,token:response.credential,domain};
+      saveSSOUser(user);
+      setSsoUser(user);
+      startSession();
+      setLocked(false);
+      setPinError("");
+      logAudit(`Log masuk SSO: ${email}`);
+      showToast(`✅ Selamat datang, ${name.split(" ")[0]}!`);
+    }catch(e){
+      setPinError("Gagal log masuk dengan Google. Cuba semula.");
+      logAudit("SSO error: "+e.message);
+    }
+  },[]);
+
+  // ── Inisialisasi Google SSO ──────────────────────────────
+  useEffect(()=>{
+    if(!isSSOConfigured())return;
+    const init=()=>{
+      if(!window.google)return;
+      window.google.accounts.id.initialize({
+        client_id:GOOGLE_CLIENT_ID,
+        callback:handleGoogleLogin,
+        auto_select:false,
+        cancel_on_tap_outside:true,
+      });
+    };
+    if(window.google)init();
+    else{
+      const interval=setInterval(()=>{if(window.google){init();clearInterval(interval)}},200);
+      return()=>clearInterval(interval);
+    }
+  },[handleGoogleLogin]);
+
+  // ── Hantar PIN ───────────────────────────────────────────
+  const submitPin=(pin)=>{
+    if(lockedOut){setPinError("Akaun dikunci. Cuba selepas beberapa minit.");return}
+    if(verifyPin(pin)){
+      const newAttempts=0;
+      sessionStorage.setItem("pin-attempts","0");
+      setPinAttempts(0);
+      startSession();
+      setLocked(false);
+      setPinInput("");
+      setPinError("");
+      logAudit("Log masuk berjaya");
+    }else{
+      const att=pinAttempts+1;
+      setPinAttempts(att);
+      sessionStorage.setItem("pin-attempts",att.toString());
+      setPinInput("");
+      if(att>=MAX_ATTEMPTS){
+        sessionStorage.setItem("lockout-time",Date.now().toString());
+        setLockedOut(true);
+        setPinError(`Terlalu banyak cubaan! Dikunci selama 5 minit.`);
+        logAudit(`Akaun dikunci — ${att} cubaan gagal`);
+        setTimeout(()=>{setLockedOut(false);sessionStorage.removeItem("lockout-time");setPinError("")},LOCKOUT_DURATION);
+      }else{
+        setPinError(`PIN salah. ${MAX_ATTEMPTS-att} cubaan lagi.`);
+        logAudit(`Cubaan log masuk gagal (${att}/${MAX_ATTEMPTS})`);
+      }
+    }
+  };
+
+  // ── Simpan PIN baru ──────────────────────────────────────
+  const confirmNewPin=(pin)=>{
+    if(newPinStep===1){
+      setNewPin(pin);
+      setNewPinStep(2);
+      setPinInput("");
+      setPinError("");
+    }else{
+      if(pin===newPin){
+        savePin(pin);
+        setHasPin(true);
+        setNewPin("");
+        setNewPinStep(1);
+        setSetupPin(false);
+        startSession();
+        setLocked(false);
+        logAudit("PIN baru ditetapkan");
+        showToast("✅ PIN berjaya ditetapkan!");
+      }else{
+        setPinError("PIN tidak sepadan. Cuba semula.");
+        setPinInput("");
+        setNewPinStep(1);
+        setNewPin("");
+      }
+    }
+  };
+
+  // ── Padam PIN ────────────────────────────────────────────
+  const removePin=()=>{
+    if(confirm("Padam PIN? Aplikasi tidak akan dilindungi.")){
+      localStorage.removeItem(PINKEY);
+      setHasPin(false);
+      setSetupPin(false);
+      logAudit("PIN dipadam");
+      showToast("PIN telah dipadam");
+    }
+  };
+
+  // ── Eksport data ─────────────────────────────────────────
+  const exportData=()=>{
+    const data={contacts,exportedAt:new Date().toISOString(),version:"bday-v8"};
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url;a.download=`backup-kenalan-${new Date().toISOString().slice(0,10)}.json`;a.click();
+    URL.revokeObjectURL(url);
+    logAudit(`Data dieksport — ${contacts.length} kenalan`);
+    showToast(`✅ ${contacts.length} kenalan dieksport!`);
+  };
+
+  // ── Papar skrin kunci ─────────────────────────────────────
+  if(locked||setupPin){
+    return <LockScreen
+      locked={locked} setupPin={setupPin} hasPin={hasPin}
+      pinInput={pinInput} setPinInput={setPinInput}
+      pinError={pinError} setPinError={setPinError}
+      pinAttempts={pinAttempts} lockedOut={lockedOut}
+      newPinStep={newPinStep}
+      authMode={authMode} setAuthMode={setAuthMode}
+      ssoConfigured={isSSOConfigured()}
+      ssoUser={ssoUser}
+      onSubmit={submitPin}
+      onSetupPin={()=>{setSetupPin(true);setPinInput("");setNewPinStep(1);setNewPin("");setPinError("")}}
+      onConfirmNew={confirmNewPin}
+      onSkip={()=>{setSetupPin(false);startSession();setLocked(false);logAudit("Skip PIN — terus masuk")}}
+      onGoogleLogin={handleGoogleLogin}
+      googleClientId={GOOGLE_CLIENT_ID}
+    />;
+  }
+
+  const today=contacts.filter(c=>daysUntil(c.dob)===0);
+  const upcoming=contacts.map(c=>({...c,days:daysUntil(c.dob)})).filter(c=>c.days>0&&c.days<=30).sort((a,b)=>a.days-b.days);
+  const filtered=contacts.filter(c=>{
+    const q=search.toLowerCase();
+    return(c.name.toLowerCase().includes(q)||(c.phone||"").includes(q))&&(roleF==="Semua"||c.role===roleF);
+  }).sort((a,b)=>daysUntil(a.dob)-daysUntil(b.dob));
+
+  const apiTelegram=async(mesej)=>{
+    if(!settings.tgToken||!settings.tgChatId)return{ok:false,err:"Token/Chat ID kosong"};
+    const body={chat_id:settings.tgChatId,text:mesej,parse_mode:"Markdown"};
+    if(settings.tgTopicId)body.message_thread_id=parseInt(settings.tgTopicId);
+    try{
+      const r=await fetch(`https://api.telegram.org/bot${settings.tgToken}/sendMessage`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+      const d=await r.json();
+      return d.ok?{ok:true}:{ok:false,err:d.description};
+    }catch(e){return{ok:false,err:e.message}}
+  };
+
+  const apiFonnteGroup=async(mesej)=>{
+    if(!settings.fonnteToken||!settings.waGroupId)return{ok:false,err:"Token/Group ID kosong"};
+    try{
+      const fd=new FormData();
+      fd.append("target",settings.waGroupId);
+      fd.append("message",mesej.replace(/\*/g,"").replace(/_/g,""));
+      fd.append("countryCode","60");
+      const r=await fetch("https://api.fonnte.com/send",{method:"POST",headers:{"Authorization":settings.fonnteToken},body:fd});
+      const d=await r.json();
+      return d.status?{ok:true}:{ok:false,err:d.reason||"Gagal"};
+    }catch(e){return{ok:false,err:e.message}}
+  };
+
+  const apiFonnteIndividu=async(mesej,phone)=>{
+    if(!settings.fonnteToken||!phone)return{ok:false,err:"Token/nombor kosong"};
+    try{
+      const fd=new FormData();
+      fd.append("target",phone.replace(/\D/g,""));
+      fd.append("message",mesej.replace(/\*/g,"").replace(/_/g,""));
+      fd.append("countryCode","60");
+      const r=await fetch("https://api.fonnte.com/send",{method:"POST",headers:{"Authorization":settings.fonnteToken},body:fd});
+      const d=await r.json();
+      return d.status?{ok:true}:{ok:false,err:d.reason||"Gagal"};
+    }catch(e){return{ok:false,err:e.message}}
+  };
+
+  const sendTg=async(c)=>{
+    if(!settings.tgToken||!settings.tgChatId){showToast("Sila isi Token Telegram dan Chat ID dalam Tetapan","err");return}
+    setSending(s=>({...s,[c.id+"tg"]:true}));
+    const r=await apiTelegram(buildMsg(c));
+    if(r.ok)showToast(`✅ Telegram berjaya dihantar kepada ${c.name}!`);
+    else showToast(`❌ Telegram gagal: ${r.err}`,"err");
+    setSending(s=>({...s,[c.id+"tg"]:false}));
+  };
+
+  const sendWa=async(c)=>{
+    if(!settings.fonnteToken){showToast("Sila isi Token Fonnte dalam Tetapan","err");return}
+    if(!c.phone){showToast("Kenalan ini tiada nombor telefon","err");return}
+    setSending(s=>({...s,[c.id+"wa"]:true}));
+    const r=await apiFonnteIndividu(buildMsg(c),c.phone);
+    if(r.ok)showToast(`✅ WhatsApp berjaya dihantar kepada ${c.name}!`);
+    else showToast(`❌ Fonnte gagal: ${r.err}`,"err");
+    setSending(s=>({...s,[c.id+"wa"]:false}));
+  };
+
+  const sendWaGroup=async(c)=>{
+    if(!settings.fonnteToken){showToast("Sila isi Token Fonnte dalam Tetapan","err");return}
+    if(!settings.waGroupId){showToast("Sila pilih kumpulan WhatsApp dalam Tetapan","err");return}
+    setSending(s=>({...s,[c.id+"wag"]:true}));
+    const r=await apiFonnteGroup(buildMsg(c));
+    if(r.ok)showToast(`✅ WhatsApp berjaya dihantar ke ${settings.waGroupName||"kumpulan"}!`);
+    else showToast(`❌ Fonnte gagal: ${r.err}`,"err");
+    setSending(s=>({...s,[c.id+"wag"]:false}));
+  };
+
+  const sendWaManual=(c)=>{
+    const msg=encodeURIComponent(buildMsg(c).replace(/\*/g,"").replace(/_/g,""));
+    const phone=(c.phone||"").replace(/\D/g,"");
+    window.open(phone?`https://wa.me/${phone}?text=${msg}`:`https://wa.me/?text=${msg}`,"_blank");
+  };
+
+  const jalankanAutomasi=async()=>{
+    if(contacts.length===0){showToast("Tiada kenalan dalam senarai","err");return}
+    setAutoRunning(true);setAutoLog([]);
+    addLog(`Memulakan semakan — ${contacts.length} kenalan`,"info");
+    const hariAwal=parseInt(settings.hariAwal)||0;
+    let jumlah=0;
+    for(const c of contacts){
+      const days=daysUntil(c.dob);
+      const adaHariLahir=days===0;
+      const adaPeringatan=hariAwal>0&&days>0&&days<=hariAwal;
+      if(!adaHariLahir&&!adaPeringatan)continue;
+      const mesej=adaHariLahir?buildMsg(c):buildReminderMsg(c,days);
+      addLog(`${c.name} (${c.role}) — ${adaHariLahir?"🎂 Hari lahir!":days+" hari lagi"}`,"info");
+      if(settings.tgToken&&settings.tgChatId){
+        const r=await apiTelegram(mesej);
+        if(r.ok)addLog(`  ✅ Telegram berjaya`,"ok");
+        else addLog(`  ❌ Telegram gagal: ${r.err}`,"err");
+      }else{addLog(`  ⚠️ Telegram: token/chat ID belum diisi`,"warn")}
+      if(settings.fonnteToken&&settings.waGroupId){
+        const r=await apiFonnteGroup(mesej);
+        if(r.ok)addLog(`  ✅ WhatsApp kumpulan berjaya`,"ok");
+        else addLog(`  ❌ WhatsApp kumpulan gagal: ${r.err}`,"err");
+      }else{addLog(`  ⚠️ WhatsApp: token/group ID belum diisi`,"warn")}
+      if(settings.fonnteToken&&c.phone&&adaHariLahir){
+        const r=await apiFonnteIndividu(mesej,c.phone);
+        if(r.ok)addLog(`  ✅ WhatsApp peribadi (${c.phone}) berjaya`,"ok");
+        else addLog(`  ❌ WhatsApp peribadi gagal: ${r.err}`,"err");
+      }
+      jumlah++;
+    }
+    if(jumlah===0)addLog("Tiada hari lahir hari ini atau dalam tempoh peringatan","warn");
+    else addLog(`Selesai — ${jumlah} kenalan diproses`,"ok");
+    setAutoRunning(false);
+    showToast(jumlah>0?`✅ Automasi selesai — ${jumlah} kenalan diproses`:"ℹ️ Tiada hari lahir untuk dihantar hari ini");
+  };
+
+  const hasFonnte=!!settings.fonnteToken;
+
+  return(
+    <div style={{minHeight:"100vh",background:"var(--bg)"}}>
+
+      {/* Header */}
+      <header className="app-header">
+        <div className="app-header-inner">
+          <div className="app-logo">
+            <div className="app-logo-icon">🎂</div>
+            <div>
+              <div className="app-title">Peringatan Tarikh Lahir</div>
+              <div className="app-subtitle">
+                SK Kiandongo · {contacts.length} orang didaftar
+                {ssoUser&&<span style={{marginLeft:6,color:"var(--accent)",fontWeight:700}}>· {ssoUser.name.split(" ")[0]}</span>}
+              </div>
+            </div>
+          </div>
+          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            {today.length>0&&(
+              <div className="cbadge cb-today pulse" style={{fontSize:12,padding:"4px 10px"}}>
+                🎉 {today.length} hari ini
+              </div>
+            )}
+            <button onClick={jalankanAutomasi} disabled={autoRunning}
+              style={{padding:"8px 14px",fontSize:12,fontWeight:700,fontFamily:"inherit",
+                background:autoRunning?"var(--bg2)":"var(--accent)",
+                color:autoRunning?"var(--text3)":"#fff",
+                border:`1.5px solid ${autoRunning?"var(--border)":"var(--accent)"}`,
+                borderRadius:"var(--r-sm)",cursor:autoRunning?"not-allowed":"pointer",whiteSpace:"nowrap",
+                boxShadow:autoRunning?"none":"0 2px 8px rgba(45,106,79,0.3)"}}>
+              {autoRunning?"⏳ Menghantar...":"⚡ Hantar Semua"}
+            </button>
+            {hasPin&&(
+              <button onClick={doLogout} title="Log Keluar"
+                style={{padding:"8px 10px",fontSize:16,background:"transparent",border:"1.5px solid var(--border)",borderRadius:"var(--r-sm)",cursor:"pointer",color:"var(--text2)"}}>
+                🔒
+              </button>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Session bar */}
+      {hasPin&&(
+        <div style={{background:"var(--surface)",borderBottom:"1px solid var(--border)"}}>
+          <div className="session-bar">
+            <div className="session-timer" style={{color:sessionLeft<120000?"#c2410c":"var(--text3)"}}>
+              <div className={`session-dot${sessionLeft<120000?" warn":""}`}></div>
+              Sesi aktif · {sessionLeft<120000?`⚠️ Tamat dalam ${Math.ceil(sessionLeft/1000)}s`:`${Math.floor(sessionLeft/60000)} min lagi`}
+            </div>
+            <div style={{display:"flex",gap:8,alignItems:"center"}}>
+              <button onClick={exportData} className="export-btn">💾 Eksport</button>
+              {!hasPin&&<button onClick={()=>setSetupPin(true)} className="export-btn">🔐 Tetapkan PIN</button>}
+              {hasPin&&<button onClick={removePin} className="export-btn" style={{color:"#b91c1c"}}>🗑️ Padam PIN</button>}
+            </div>
+          </div>
+        </div>
+      )}
+      {!hasPin&&(
+        <div style={{background:"var(--warn-bg)",borderBottom:"1px solid var(--warn-border)"}}>
+          <div style={{maxWidth:780,margin:"0 auto",padding:"7px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
+            <div style={{fontSize:12,color:"var(--warn)",fontWeight:600}}>⚠️ Aplikasi tidak dilindungi PIN — data kenalan boleh diakses oleh sesiapa</div>
+            <div style={{display:"flex",gap:8,flexShrink:0}}>
+              <button onClick={exportData} className="export-btn" style={{fontSize:11}}>💾 Eksport</button>
+              <button onClick={()=>setSetupPin(true)} style={{fontSize:11,fontWeight:700,padding:"4px 12px",background:"var(--warn)",color:"#fff",border:"none",borderRadius:"var(--r-sm)",cursor:"pointer",fontFamily:"inherit"}}>🔐 Tetapkan PIN</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast */}
+      {toast&&(
+        <div style={{maxWidth:780,margin:"0 auto",padding:"0 16px"}}>
+          <div className={`toast ${toast.type==="err"?"toast-err":"toast-ok"}`} style={{marginTop:10}}>
+            {toast.type==="err"?"❌":"✅"} {toast.msg}
+          </div>
+        </div>
+      )}
+
+      {/* Log automasi */}
+      {autoLog.length>0&&(
+        <div style={{maxWidth:780,margin:"8px auto 0",padding:"0 16px"}}>
+          <div style={{border:"1px solid var(--border)",borderRadius:"var(--r)",overflow:"hidden"}}>
+            <div style={{background:"#0f172a",padding:"7px 12px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <span style={{fontSize:12,fontWeight:700,color:"#e2e8f0",display:"flex",alignItems:"center",gap:6}}>
+                <span style={{width:6,height:6,borderRadius:"50%",background:"#4ade80",display:"inline-block"}}></span>
+                Log Penghantaran
+              </span>
+              <button onClick={()=>setAutoLog([])} style={{fontSize:11,color:"#64748b",background:"transparent",border:"none",cursor:"pointer",fontFamily:"inherit"}}>✕ Tutup</button>
+            </div>
+            <div className="log-box">
+              {autoLog.map((l,i)=>(
+                <div key={i} className={`log-${l.type}`}>
+                  <span className="log-time">[{l.time}]</span>{l.msg}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab navigation */}
+      <nav className="tab-nav">
+        <div className="tab-nav-inner">
+          {[["dashboard","📊","Papan Pemuka"],["contacts","👤","Senarai"],["settings","⚙️","Tetapan"]].map(([id,icon,lbl])=>(
+            <button key={id} onClick={()=>setTab(id)} className={`tab-btn${tab===id?" active":""}`}>
+              <span>{icon}</span>{lbl}
+            </button>
+          ))}
+        </div>
+      </nav>
+
+      {/* Kandungan */}
+      <main style={{maxWidth:780,margin:"0 auto",padding:"18px 16px"}}>
+        {tab==="dashboard"&&(
+          <Dashboard
+            today={today} upcoming={upcoming} contacts={contacts}
+            onTg={sendTg} onWa={sendWa} onWaGroup={sendWaGroup} onWaManual={sendWaManual}
+            sending={sending} hasFonnte={hasFonnte} groupName={settings.waGroupName}
+            onAuto={jalankanAutomasi} autoRunning={autoRunning}
+          />
+        )}
+        {tab==="contacts"&&(
+          <Contacts
+            contacts={filtered} allContacts={contacts}
+            search={search} setSearch={setSearch} roleF={roleF} setRoleF={setRoleF}
+            onAdd={()=>setModal({type:"form",contact:null})}
+            onEdit={c=>setModal({type:"form",contact:c})}
+            onDel={c=>{if(confirm(`Padam ${c.name}?`)){saveC(contacts.filter(x=>x.id!==c.id));showToast(`${c.name} dipadam`)}}}
+            onUpload={parsed=>setModal({type:"upload",parsed})}
+            onTg={sendTg} onWa={sendWa} onWaGroup={sendWaGroup} onWaManual={sendWaManual}
+            sending={sending} hasFonnte={hasFonnte} groupName={settings.waGroupName}
+          />
+        )}
+        {tab==="settings"&&(
+          <Settings settings={settings} onSave={s=>{saveS(s);showToast("✅ Tetapan disimpan!")}}/>
+        )}
+      </main>
+
+      {modal?.type==="form"&&(
+        <FormModal
+          contact={modal.contact}
+          onClose={()=>setModal(null)}
+          onSave={c=>{
+            const n=c.id?contacts.map(x=>x.id===c.id?c:x):[...contacts,{...c,id:Date.now()+""}];
+            saveC(n);setModal(null);
+            showToast(c.id?"✅ Dikemas kini!":"✅ Ditambah!");
+          }}
+        />
+      )}
+      {modal?.type==="upload"&&(
+        <UploadPreviewModal
+          parsed={modal.parsed} existing={contacts}
+          onClose={()=>setModal(null)}
+          onImport={(list,mode)=>{
+            const n=list.map(c=>({...c,id:Date.now()+Math.random()+""}));
+            saveC(mode==="replace"?n:[...contacts,...n]);
+            setModal(null);
+            showToast(`✅ ${n.length} kenalan diimport!`);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+
+/* ─── Lock Screen Component ─────────────────────────────────── */
+function LockScreen({locked,setupPin,hasPin,pinInput,setPinInput,pinError,setPinError,
+  pinAttempts,lockedOut,newPinStep,authMode,setAuthMode,ssoConfigured,ssoUser,
+  onSubmit,onSetupPin,onConfirmNew,onSkip,onGoogleLogin,googleClientId}){
+  const PIN_LEN=4;
+  const isSetup=setupPin&&!locked;
+  const gsiRef=useRef(null);
+
+  // Render butang Google Sign In
+  useEffect(()=>{
+    if(!ssoConfigured||!window.google||!gsiRef.current)return;
+    if(authMode!=="google")return;
+    try{
+      gsiRef.current.innerHTML="";
+      window.google.accounts.id.renderButton(gsiRef.current,{
+        type:"standard",
+        theme:"outline",
+        size:"large",
+        text:"signin_with",
+        shape:"rectangular",
+        logo_alignment:"left",
+        width:gsiRef.current.offsetWidth||280,
+      });
+    }catch(e){}
+  },[authMode,ssoConfigured]);
+
+  const pressKey=(k)=>{
+    if(lockedOut)return;
+    if(pinInput.length>=PIN_LEN)return;
+    const next=pinInput+k;
+    setPinInput(next);
+    setPinError("");
+    if(next.length===PIN_LEN){
+      setTimeout(()=>{
+        if(isSetup)onConfirmNew(next);
+        else onSubmit(next);
+      },120);
+    }
+  };
+  const pressBack=()=>{setPinInput(p=>p.slice(0,-1));setPinError("")};
+
+  const pinTitle=isSetup
+    ?(newPinStep===1?"Tetapkan PIN Baharu":"Sahkan PIN Baharu")
+    :"Masukkan PIN";
+  const pinSub=isSetup
+    ?(newPinStep===1?"Masukkan 4 digit PIN untuk melindungi aplikasi":"Masukkan semula PIN untuk mengesahkan")
+    :"Masukkan 4 digit PIN anda";
+
+  return(
+    <div className="lock-screen">
+      <div className="lock-card">
+        {/* Logo */}
+        <div className="lock-icon">🎂</div>
+        <div className="lock-title">SK Kiandongo</div>
+        <div style={{fontSize:12,color:"var(--text2)",marginBottom:20}}>Peringatan Tarikh Lahir</div>
+
+        {/* Tab pilihan kaedah log masuk */}
+        {ssoConfigured&&!isSetup&&(
+          <div className="auth-mode-tabs">
+            <button className={`auth-tab${authMode==="google"?" active":""}`} onClick={()=>{setAuthMode("google");setPinError("")}}>
+              <span style={{marginRight:4}}>🔵</span>Google
+            </button>
+            <button className={`auth-tab${authMode==="pin"?" active":""}`} onClick={()=>{setAuthMode("pin");setPinError("")}}>
+              <span style={{marginRight:4}}>🔢</span>PIN
+            </button>
+          </div>
+        )}
+
+        {/* ── TAB GOOGLE ── */}
+        {(authMode==="google"||!ssoConfigured)&&!isSetup&&ssoConfigured&&(
+          <div>
+            {/* Amaran Client ID belum diisi */}
+            {googleClientId.includes("MASUKKAN")&&(
+              <div className="client-id-badge">
+                ⚠️ <strong>Client ID belum dikonfigurasi.</strong><br/>
+                Edit fail HTML dan gantikan nilai <code>GOOGLE_CLIENT_ID</code> dengan Client ID dari Google Cloud Console anda.
+              </div>
+            )}
+
+            {/* Butang Google Sign In */}
+            {!googleClientId.includes("MASUKKAN")&&(
+              <div>
+                <div ref={gsiRef} style={{marginBottom:12,minHeight:44,display:"flex",justifyContent:"center"}}></div>
+                <div style={{fontSize:11,color:"var(--text3)",textAlign:"center",marginBottom:8}}>
+                  Log masuk dengan akaun Google yang sah
+                </div>
+              </div>
+            )}
+
+            {pinError&&<div className="pin-error" style={{marginBottom:8,display:"block"}}>{pinError}</div>}
+
+            {hasPin&&(
+              <>
+                <div className="sso-divider">atau</div>
+                <button onClick={()=>setAuthMode("pin")} className="google-btn" style={{fontSize:13}}>
+                  🔢 Log masuk dengan PIN
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ── TAB PIN ── */}
+        {(authMode==="pin"||!ssoConfigured)&&!isSetup&&(
+          <div>
+            {!hasPin&&!ssoConfigured&&(
+              <div style={{padding:"12px",background:"var(--warn-bg)",border:"1px solid var(--warn-border)",borderRadius:10,marginBottom:16,fontSize:12,color:"var(--warn)",textAlign:"center"}}>
+                ⚠️ Tiada kaedah log masuk ditetapkan.<br/>
+                <button onClick={onSetupPin} style={{marginTop:6,fontSize:12,fontWeight:700,padding:"5px 14px",background:"var(--warn)",color:"#fff",border:"none",borderRadius:6,cursor:"pointer",fontFamily:"inherit"}}>
+                  Tetapkan PIN Sekarang
+                </button>
+              </div>
+            )}
+
+            {hasPin&&(
+              <>
+                <div style={{fontSize:13,fontWeight:600,color:"var(--text)",marginBottom:4,textAlign:"center"}}>{pinTitle}</div>
+                <div style={{fontSize:12,color:"var(--text3)",marginBottom:18,textAlign:"center"}}>{pinSub}</div>
+
+                <div className="pin-dots">
+                  {[0,1,2,3].map(i=>(
+                    <div key={i} className={`pin-dot${pinInput.length>i?" filled":""}${pinError?" error":""}`}/>
+                  ))}
+                </div>
+
+                <div className="pin-error">{pinError}</div>
+
+                {!lockedOut&&(
+                  <div className="pin-grid">
+                    {["1","2","3","4","5","6","7","8","9","","0","⌫"].map((k,i)=>(
+                      <button key={i}
+                        className={`pin-key${k==="⌫"?" del":""}`}
+                        onClick={()=>k==="⌫"?pressBack():k?pressKey(k):null}
+                        style={{visibility:k===""?"hidden":"visible"}}>
+                        {k}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {lockedOut&&(
+                  <div style={{padding:"14px",background:"#fff0f0",border:"1px solid #fca5a5",borderRadius:10,marginBottom:12,fontSize:12,color:"#b91c1c",fontWeight:600,textAlign:"center"}}>
+                    🔒 Terlalu banyak cubaan gagal.<br/>Dikunci selama 5 minit.
+                  </div>
+                )}
+
+                {ssoConfigured&&(
+                  <>
+                    <div className="sso-divider">atau</div>
+                    <button onClick={()=>setAuthMode("google")} className="google-btn" style={{fontSize:13}}>
+                      <svg className="google-icon" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                      </svg>
+                      Log masuk dengan Google
+                    </button>
+                  </>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ── SETUP PIN ── */}
+        {isSetup&&(
+          <div>
+            <div style={{fontSize:13,fontWeight:600,color:"var(--text)",marginBottom:4,textAlign:"center"}}>{pinTitle}</div>
+            <div style={{fontSize:12,color:"var(--text3)",marginBottom:18,textAlign:"center"}}>{pinSub}</div>
+
+            <div className="pin-dots">
+              {[0,1,2,3].map(i=>(
+                <div key={i} className={`pin-dot${pinInput.length>i?" filled":""}${pinError?" error":""}`}/>
+              ))}
+            </div>
+            <div className="pin-error">{pinError}</div>
+
+            <div className="pin-grid">
+              {["1","2","3","4","5","6","7","8","9","","0","⌫"].map((k,i)=>(
+                <button key={i}
+                  className={`pin-key${k==="⌫"?" del":""}`}
+                  onClick={()=>k==="⌫"?pressBack():k?pressKey(k):null}
+                  style={{visibility:k===""?"hidden":"visible"}}>
+                  {k}
+                </button>
+              ))}
+            </div>
+
+            {newPinStep===1&&(
+              <button onClick={onSkip} style={{width:"100%",background:"transparent",border:"none",fontSize:12,color:"var(--text3)",cursor:"pointer",fontFamily:"inherit",marginTop:4,padding:"6px"}}>
+                Langkau untuk sekarang →
+              </button>
+            )}
+          </div>
+        )}
+
+        <div className="pin-hint" style={{marginTop:12}}>
+          {isSetup?"PIN disimpan di peranti anda sahaja":ssoConfigured?"Log masuk dengan Google atau PIN":"Terlalu banyak cubaan akan mengunci akaun"}
+        </div>
+      </div>
+
+      <div className="lock-footer">
+        🛡️ Peringatan Tarikh Lahir SK Kiandongo<br/>
+        Data dilindungi · Dibangunkan dengan selamat
+      </div>
+    </div>
+  );
+}
+
+
+/* ─── Birthday Card ──────────────────────────────────────────── */
+function BCard({c,days,onTg,onWa,onWaGroup,onWaManual,sending,hasFonnte,groupName}){
+  const col=avatarColor(c.name),ini=initials(c.name),nextAge=getAge(c.dob)+1;
+  const isToday=days===0;
+  const rbClass=c.role==="Guru"?"rb-guru":c.role==="Murid"?"rb-murid":"rb-staf";
+  return(
+    <div className={`bday-card fade-up${isToday?" is-today":""}`}>
+      <div style={{display:"flex",alignItems:"flex-start",gap:11}}>
+        <div className="bday-avatar" style={{background:col}}>{ini}</div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{display:"flex",alignItems:"center",gap:7,flexWrap:"wrap",marginBottom:3}}>
+            <div className="bday-name">{c.name}</div>
+            <span className={`role-badge ${rbClass}`}>{c.role}</span>
+          </div>
+          <div className="bday-meta">
+            <span>📅 {fmtDate(c.dob)}</span>
+            <span style={{color:"var(--border2)"}}>·</span>
+            {isToday
+              ?<span style={{color:"var(--warn)",fontWeight:700}}>🎂 Umur {nextAge} tahun hari ini!</span>
+              :<span>{nextAge} thn · {days} hari lagi</span>
+            }
+            {c.notes&&<><span style={{color:"var(--border2)"}}>·</span><span style={{fontStyle:"italic"}}>{c.notes}</span></>}
+          </div>
+        </div>
+        <div style={{flexShrink:0}}>
+          {isToday&&<div className="cbadge cb-today">🎉 Hari ini</div>}
+          {!isToday&&days<=3&&<div className="cbadge cb-soon">⏰ {days}h</div>}
+          {!isToday&&days>3&&days<=7&&<div className="cbadge cb-soon">{days} hari</div>}
+          {!isToday&&days>7&&<div className="cbadge cb-upcoming">{days} hari</div>}
+        </div>
+      </div>
+      <div className="bday-actions">
+        <button onClick={()=>onTg(c)} disabled={!!sending[c.id+"tg"]} className="pill pill-tg">
+          {sending[c.id+"tg"]?"⏳":"📨"} Telegram
+        </button>
+        {hasFonnte?(
+          <>
+            <button onClick={()=>onWa(c)} disabled={!!sending[c.id+"wa"]} className="pill pill-wa">
+              {sending[c.id+"wa"]?"⏳":"💬"} WA Peribadi
+            </button>
+            <button onClick={()=>onWaGroup(c)} disabled={!!sending[c.id+"wag"]} className="pill pill-wag">
+              {sending[c.id+"wag"]?"⏳":"👥"} {groupName||"WA Kumpulan"}
+            </button>
+          </>
+        ):(
+          <button onClick={()=>onWaManual(c)} className="pill pill-wa">💬 WhatsApp</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Dashboard ──────────────────────────────────────────────── */
+function Dashboard({today,upcoming,contacts,onTg,onWa,onWaGroup,onWaManual,sending,hasFonnte,groupName,onAuto,autoRunning}){
+  const thisMonth=contacts.filter(c=>new Date(c.dob).getMonth()===new Date().getMonth()).length;
+  const nextBday=upcoming[0];
+  const guruCount=contacts.filter(c=>c.role==="Guru").length;
+  const muridCount=contacts.filter(c=>c.role==="Murid").length;
+  const bulanIni=new Date().toLocaleString("ms",{month:"long"});
+
+  return(
+    <div>
+      {/* Metric cards */}
+      <div className="metric-grid">
+        <div className="metric-card mc-blue">
+          <div className="metric-icon mi-blue">👥</div>
+          <div className="metric-label">Jumlah Daftar</div>
+          <div className="metric-value mv-blue">{contacts.length}</div>
+          <div className="metric-sub">{guruCount} guru · {muridCount} murid</div>
+        </div>
+        <div className={`metric-card ${today.length>0?"mc-orange":"mc-green"}`}>
+          <div className={`metric-icon ${today.length>0?"mi-orange":"mi-green"}`}>{today.length>0?"🎂":"✅"}</div>
+          <div className="metric-label">Hari Lahir Hari Ini</div>
+          <div className={`metric-value ${today.length>0?"mv-orange":"mv-green"}`}>{today.length}</div>
+          <div className="metric-sub">{today.length>0?today.map(c=>c.name.split(" ")[0]).join(", ")+" menyambut!":"Tiada hari lahir hari ini"}</div>
+        </div>
+        <div className="metric-card mc-amber">
+          <div className="metric-icon mi-amber">📅</div>
+          <div className="metric-label">Bulan {bulanIni}</div>
+          <div className="metric-value mv-amber">{thisMonth}</div>
+          <div className="metric-sub">{nextBday?`Seterusnya: ${nextBday.name.split(" ")[0]} (${nextBday.days}h lagi)`:"Tiada dalam 30 hari"}</div>
+        </div>
+      </div>
+
+      {/* Banner hari lahir */}
+      {today.length>0&&(
+        <div className="today-banner">
+          <div style={{flex:1}}>
+            <div className="today-banner-title">
+              🎉 {today.length===1?`${today[0].name.split(" ")[0]} menyambut hari lahir hari ini!`:`${today.length} orang menyambut hari lahir hari ini!`}
+            </div>
+            <div className="today-banner-sub">Hantar ucapan ke Telegram & WhatsApp dengan satu klik</div>
+          </div>
+          <button onClick={onAuto} disabled={autoRunning} className="today-banner-btn">
+            {autoRunning?"⏳ Menghantar...":"⚡ Hantar Semua"}
+          </button>
+        </div>
+      )}
+
+      {/* Hari lahir hari ini */}
+      {today.length>0&&(
+        <div style={{marginBottom:22}}>
+          <div className="section-hdr">
+            <div className="section-dot dot-red"></div>
+            <div className="section-title">Hari Lahir Hari Ini</div>
+            <div className="section-count">{today.length} orang</div>
+          </div>
+          {today.map(c=>(
+            <BCard key={c.id} c={c} days={0} onTg={onTg} onWa={onWa} onWaGroup={onWaGroup} onWaManual={onWaManual} sending={sending} hasFonnte={hasFonnte} groupName={groupName}/>
+          ))}
+        </div>
+      )}
+
+      {/* Akan datang */}
+      <div>
+        <div className="section-hdr">
+          <div className="section-dot dot-green"></div>
+          <div className="section-title">Akan Datang</div>
+          <div className="section-count">{upcoming.length} dalam 30 hari</div>
+        </div>
+        {upcoming.length===0?(
+          <div className="empty-state">
+            <div className="empty-icon">🗓️</div>
+            <div className="empty-title">Tiada hari lahir dalam 30 hari akan datang</div>
+            <div className="empty-sub">Papan pemuka dikemas kini secara automatik</div>
+          </div>
+        ):upcoming.map(c=>(
+          <BCard key={c.id} c={c} days={c.days} onTg={onTg} onWa={onWa} onWaGroup={onWaGroup} onWaManual={onWaManual} sending={sending} hasFonnte={hasFonnte} groupName={groupName}/>
+        ))}
+      </div>
+
+      {contacts.length===0&&(
+        <div className="empty-state" style={{marginTop:32}}>
+          <div className="empty-icon">👥</div>
+          <div className="empty-title">Belum ada kenalan didaftarkan</div>
+          <div className="empty-sub">Pergi ke tab Senarai untuk tambah kenalan atau upload fail CSV/Excel</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Contacts ───────────────────────────────────────────────── */
+function Contacts({contacts,allContacts,search,setSearch,roleF,setRoleF,onAdd,onEdit,onDel,onUpload,onTg,onWa,onWaGroup,onWaManual,sending,hasFonnte,groupName}){
+  const fileRef=useRef();
+
+  const handleFile=async(file)=>{
+    if(!file)return;
+    const ext=file.name.split(".").pop().toLowerCase();
+    let rows=[];
+    if(ext==="csv"){
+      const text=await file.text();
+      const lines=text.split(/\r?\n/).filter(l=>l.trim());
+      const headers=lines[0].split(",").map(h=>h.replace(/^\uFEFF/,"").trim().replace(/^"|"$/g,""));
+      for(let i=1;i<lines.length;i++){
+        const vals=lines[i].match(/(".*?"|[^,]+|(?<=,)(?=,)|^(?=,)|(?<=,)$)/g)||[];
+        const row={};headers.forEach((h,j)=>row[h]=(vals[j]||"").trim().replace(/^"|"$/g,""));
+        if(Object.values(row).some(v=>v))rows.push(row);
+      }
+    }else if(ext==="xlsx"||ext==="xls"){
+      const ab=await file.arrayBuffer();
+      const wb=XLSX.read(ab,{type:"array",cellDates:false});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      rows=XLSX.utils.sheet_to_json(ws,{defval:""});
+    }else{alert("Format tidak disokong. Guna CSV atau Excel.");return}
+    const parsed=rows.map(rowToContact).filter(r=>r.name);
+    if(parsed.length===0){alert("Tiada data kenalan dijumpai.");return}
+    onUpload(parsed);
+  };
+
+  return(
+    <div>
+      <div style={{display:"flex",gap:8,marginBottom:12,flexWrap:"wrap"}}>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Cari nama atau nombor..." style={{flex:1,minWidth:130,padding:"8px 12px",fontSize:13,border:"1.5px solid var(--border)",borderRadius:"var(--r-sm)",background:"var(--surface)",color:"var(--text)"}}/>
+        <select value={roleF} onChange={e=>setRoleF(e.target.value)} style={{padding:"8px 10px",fontSize:13,border:"1.5px solid var(--border)",borderRadius:"var(--r-sm)",background:"var(--surface)",color:"var(--text)"}}>
+          <option>Semua</option>{ROLES.map(r=><option key={r}>{r}</option>)}
+        </select>
+        <button onClick={onAdd} className="btn-primary" style={{padding:"8px 14px",fontSize:13}}>+ Tambah</button>
+        <button onClick={()=>fileRef.current.click()} className="btn-secondary" style={{padding:"8px 12px",fontSize:13}}>📂 Upload</button>
+        <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" style={{display:"none"}} onChange={e=>handleFile(e.target.files[0])}/>
+      </div>
+
+      {contacts.length===0&&allContacts.length===0&&(
+        <div className="upload-zone" onClick={()=>fileRef.current.click()}>
+          <div style={{fontSize:28,marginBottom:8}}>📂</div>
+          <div style={{fontSize:14,fontWeight:600,marginBottom:4}}>Drag & drop fail CSV atau Excel di sini</div>
+          <div style={{fontSize:12,color:"var(--text3)",marginBottom:12}}>atau klik untuk pilih fail</div>
+          <button onClick={e=>{e.stopPropagation();downloadTemplate()}} className="pill pill-wa" style={{margin:"0 auto"}}>⬇️ Muat Turun Template CSV</button>
+        </div>
+      )}
+      {allContacts.length>0&&(
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:11,padding:"8px 11px",background:"var(--surface2)",border:"1px solid var(--border)",borderRadius:"var(--r-sm)"}}>
+          <span style={{fontSize:13}}>💡</span>
+          <span style={{fontSize:12,color:"var(--text2)",flex:1}}>Upload senarai kenalan dalam format CSV atau Excel</span>
+          <button onClick={downloadTemplate} className="pill pill-wa" style={{fontSize:11}}>⬇️ Template</button>
+        </div>
+      )}
+      {contacts.length===0?(
+        <div className="empty-state">
+          <div className="empty-icon">👥</div>
+          <div className="empty-title">Tiada kenalan dalam senarai</div>
+          <div className="empty-sub">Klik <strong>+ Tambah</strong> atau <strong>📂 Upload</strong> untuk mula</div>
+        </div>
+      ):contacts.map(c=>{
+        const days=daysUntil(c.dob);
+        const rbClass=c.role==="Guru"?"rb-guru":c.role==="Murid"?"rb-murid":"rb-staf";
+        return(
+          <div key={c.id} className="row-item fade-up">
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <div style={{width:40,height:40,borderRadius:10,background:avatarColor(c.name),display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:13,flexShrink:0}}>{initials(c.name)}</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontWeight:700,fontSize:14,color:"var(--text)",letterSpacing:"-0.2px"}}>{c.name}</div>
+                <div style={{fontSize:11,color:"var(--text2)",marginTop:2,display:"flex",gap:5,alignItems:"center",flexWrap:"wrap"}}>
+                  <span className={`role-badge ${rbClass}`}>{c.role}</span>
+                  <span>{fmtDate(c.dob)}</span>
+                  {c.phone&&<span style={{color:"var(--text3)"}}>· {c.phone}</span>}
+                </div>
+              </div>
+              <div style={{display:"flex",gap:4,flexShrink:0}}>
+                {days===0&&<div className="cbadge cb-today pulse">🎂 Hari ini</div>}
+                {days>0&&days<=7&&<div className="cbadge cb-soon">⏰ {days}h</div>}
+              </div>
+            </div>
+            <div style={{display:"flex",gap:5,marginTop:9,paddingTop:8,borderTop:"1px solid var(--border)",flexWrap:"wrap"}}>
+              <button onClick={()=>onTg(c)} disabled={!!sending[c.id+"tg"]} className="pill pill-tg">{sending[c.id+"tg"]?"⏳":"📨"} Telegram</button>
+              {hasFonnte?(
+                <>
+                  <button onClick={()=>onWa(c)} disabled={!!sending[c.id+"wa"]} className="pill pill-wa">{sending[c.id+"wa"]?"⏳":"💬"} WA Peribadi</button>
+                  <button onClick={()=>onWaGroup(c)} disabled={!!sending[c.id+"wag"]} className="pill pill-wag">{sending[c.id+"wag"]?"⏳":"👥"} {groupName||"WA Kumpulan"}</button>
+                </>
+              ):(
+                <button onClick={()=>onWaManual(c)} className="pill pill-wa">💬 WhatsApp</button>
+              )}
+              <div style={{flex:1}}/>
+              <button onClick={()=>onEdit(c)} className="pill pill-edit">✏️ Edit</button>
+              <button onClick={()=>onDel(c)} className="pill pill-del">🗑️</button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─── Upload Preview Modal ───────────────────────────────────── */
+function UploadPreviewModal({parsed,existing,onClose,onImport}){
+  const [mode,setMode]=useState("append");
+  const valid=parsed.filter(r=>r.valid);
+  const invalid=parsed.filter(r=>!r.valid);
+  return(
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-box" style={{width:"min(640px,96vw)",maxHeight:"88vh",display:"flex",flexDirection:"column",padding:"18px"}} onClick={e=>e.stopPropagation()}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+          <span style={{fontSize:20}}>📂</span>
+          <div style={{flex:1}}>
+            <div style={{fontSize:15,fontWeight:700,color:"var(--text)"}}>Pratonton Import</div>
+            <div style={{fontSize:12,color:"var(--text2)",marginTop:1}}>{parsed.length} baris · <span style={{color:"var(--accent)",fontWeight:600}}>{valid.length} sah</span> · <span style={{color:invalid.length?"#b91c1c":"var(--text3)",fontWeight:600}}>{invalid.length} tidak sah</span></div>
+          </div>
+          <button onClick={onClose} style={{background:"transparent",border:"none",fontSize:18,cursor:"pointer",color:"var(--text2)"}}>✕</button>
+        </div>
+        <div style={{display:"flex",gap:8,marginBottom:10}}>
+          {[["append",`➕ Tambah pada sedia ada (${existing.length})`],["replace","🔄 Ganti semua"]].map(([val,lbl])=>(
+            <label key={val} style={{flex:1,display:"flex",alignItems:"center",gap:7,padding:"7px 10px",border:`1.5px solid ${mode===val?"var(--accent)":"var(--border)"}`,borderRadius:"var(--r-sm)",cursor:"pointer",fontSize:12,fontWeight:mode===val?700:400,background:mode===val?"var(--accent-bg)":"var(--surface)",color:mode===val?"var(--accent)":"var(--text)"}}>
+              <input type="radio" name="mode" value={val} checked={mode===val} onChange={()=>setMode(val)} style={{accentColor:"var(--accent)"}}/>{lbl}
+            </label>
+          ))}
+        </div>
+        {parsed.length>0&&parsed[0]._keys&&(
+          <div style={{fontSize:11,padding:"6px 10px",background:"var(--info-bg)",border:"1px solid var(--info-border)",borderRadius:"var(--r-sm)",marginBottom:8,color:"var(--info)",wordBreak:"break-all",lineHeight:1.6}}>
+            <strong>Lajur dikesan:</strong> {parsed[0]._keys}
+          </div>
+        )}
+        <div style={{flex:1,overflowY:"auto",border:"1px solid var(--border)",borderRadius:"var(--r-sm)"}}>
+          <table className="preview-table">
+            <thead><tr><th>#</th><th>Nama</th><th>Tarikh Lahir</th><th>Peranan</th><th>Telefon</th><th>Status</th></tr></thead>
+            <tbody>
+              {parsed.map((r,i)=>(
+                <tr key={i}>
+                  <td style={{color:"var(--text3)"}}>{i+1}</td>
+                  <td style={{fontWeight:r.name?600:400,color:r.name?"var(--text)":"#dc2626"}}>{r.name||"❌ Kosong"}</td>
+                  <td style={{color:r.dob?"var(--text)":"#dc2626"}}>{r.dob?fmtDate(r.dob):"❌ Tidak sah"}</td>
+                  <td style={{color:"var(--text2)"}}>{r.role}</td>
+                  <td style={{color:"var(--text3)"}}>{r.phone||"—"}</td>
+                  <td>{r.valid?<span className="badge-ok">✓ Sah</span>:<span className="badge-err">✗ Ralat</span>}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {invalid.length>0&&(
+          <div style={{fontSize:12,color:"#92400e",padding:"7px 10px",background:"#fffbeb",border:"1px solid #fde68a",borderRadius:"var(--r-sm)",marginTop:8,lineHeight:1.7}}>
+            ⚠️ <strong>{invalid.length} baris tidak sah</strong> — Lajur Tarikh Lahir tidak dikenali, format tarikh tidak standard, atau sel nama/tarikh lahir kosong.
+          </div>
+        )}
+        <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:12}}>
+          <button onClick={onClose} className="btn-secondary" style={{padding:"8px 14px",fontSize:13}}>Batal</button>
+          <button onClick={()=>{if(valid.length>0)onImport(valid,mode)}} disabled={valid.length===0}
+            style={{padding:"8px 18px",fontSize:13,fontWeight:700,fontFamily:"inherit",background:valid.length?"var(--accent)":"#ccc",color:"#fff",border:"none",borderRadius:"var(--r-sm)",cursor:valid.length?"pointer":"not-allowed"}}>
+            Import {valid.length} Kenalan
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Settings ───────────────────────────────────────────────── */
+function Settings({settings,onSave}){
+  const [local,setLocal]=useState(settings);
+  const [groups,setGroups]=useState([]);
+  const [fetching,setFetching]=useState(false);
+  const [fetchMsg,setFetchMsg]=useState("");
+  useEffect(()=>setLocal(settings),[settings]);
+  const set=(k,v)=>setLocal(s=>({...s,[k]:v}));
+
+  const fetchGroups=async()=>{
+    if(!local.fonnteToken){setFetchMsg("❌ Sila masukkan Token Fonnte dahulu.");return}
+    setFetching(true);setGroups([]);setFetchMsg("⏳ Mengemaskini senarai kumpulan...");
+    try{
+      await fetch("https://api.fonnte.com/fetch-group",{method:"POST",headers:{"Authorization":local.fonnteToken},body:new FormData()});
+      const r=await fetch("https://api.fonnte.com/get-whatsapp-group",{method:"POST",headers:{"Authorization":local.fonnteToken},body:new FormData()});
+      const d=await r.json();
+      if(d.status&&d.data?.length>0){setGroups(d.data);setFetchMsg(`✅ ${d.data.length} kumpulan ditemui:`)}
+      else if(d.status)setFetchMsg("⚠️ Tiada kumpulan ditemui.");
+      else setFetchMsg(`❌ Gagal: ${d.reason||d.detail||"Semak token"}`);
+    }catch{setFetchMsg("❌ Gagal sambung ke Fonnte.")}
+    setFetching(false);
+  };
+
+  const mColor=fetchMsg.startsWith("✅")?"#15803d":fetchMsg.startsWith("❌")?"#b91c1c":"#92400e";
+  const mBg=fetchMsg.startsWith("✅")?"#f0fdf4":fetchMsg.startsWith("❌")?"#fff0f0":"#fffbeb";
+  const mBdr=fetchMsg.startsWith("✅")?"#bbf7d0":fetchMsg.startsWith("❌")?"#fca5a5":"#fde68a";
+
+  return(
+    <div style={{maxWidth:520}}>
+
+      {/* Automasi */}
+      <div className="settings-card">
+        <div style={{fontSize:14,fontWeight:700,color:"var(--text)",marginBottom:12,display:"flex",alignItems:"center",gap:7}}>⚡ Tetapan Automasi</div>
+        <div style={{marginBottom:10}}>
+          <label style={{fontSize:12,fontWeight:600,color:"var(--text2)",display:"block",marginBottom:5}}>Hantar Peringatan Awal (hari)</label>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <input type="number" min="0" max="30" value={local.hariAwal||"7"} onChange={e=>set("hariAwal",e.target.value)} style={{width:80,padding:"7px 10px",fontSize:13,border:"1.5px solid var(--border)",borderRadius:"var(--r-sm)",background:"var(--surface)",color:"var(--text)"}}/>
+            <span style={{fontSize:12,color:"var(--text3)"}}>0 = hari lahir sahaja · 7 = peringatan 7 hari awal</span>
+          </div>
+        </div>
+        <div style={{fontSize:11,color:"var(--text2)",padding:"8px 10px",background:"var(--surface2)",borderRadius:"var(--r-sm)"}}>
+          💡 Klik butang <strong>⚡ Hantar Semua</strong> di bahagian atas untuk hantar ucapan secara serentak.
+        </div>
+      </div>
+
+      {/* Fonnte */}
+      <div className="settings-card">
+        <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:14}}>
+          <span style={{fontSize:18}}>💬</span>
+          <div style={{fontSize:14,fontWeight:700,color:"var(--text)"}}>Tetapan WhatsApp — Fonnte</div>
+          <span style={{fontSize:10,padding:"2px 8px",background:"var(--accent-bg)",color:"var(--accent)",border:"1px solid var(--accent-border)",borderRadius:20,fontWeight:700}}>PERCUMA</span>
+        </div>
+        <div style={{marginBottom:11}}>
+          <label style={{fontSize:12,fontWeight:600,color:"var(--text2)",display:"block",marginBottom:5}}>Token Fonnte <span style={{color:"#ef4444"}}>*</span></label>
+          <input value={local.fonnteToken||""} onChange={e=>set("fonnteToken",e.target.value)} placeholder="Tampal token dari dashboard Fonnte..." style={{width:"100%",padding:"8px 11px",fontSize:13,border:"1.5px solid var(--border)",borderRadius:"var(--r-sm)",background:"var(--surface)",color:"var(--text)"}}/>
+          <div style={{fontSize:11,color:"var(--text3)",marginTop:4}}>fonnte.com → Devices → klik nama device → salin Token</div>
+        </div>
+        {local.waGroupId&&(
+          <div style={{background:"var(--accent-bg)",border:"1px solid var(--accent-border)",borderRadius:"var(--r-sm)",padding:"9px 12px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontSize:16}}>👥</span>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:13,fontWeight:700,color:"var(--accent)"}}>{local.waGroupName||"Kumpulan dipilih"}</div>
+              <div style={{fontSize:10,color:"var(--text3)",wordBreak:"break-all"}}>{local.waGroupId}</div>
+            </div>
+            <button onClick={()=>{set("waGroupId","");set("waGroupName","");setGroups([]);setFetchMsg("")}} className="pill pill-del" style={{fontSize:11}}>Tukar</button>
+          </div>
+        )}
+        <button onClick={fetchGroups} disabled={fetching} className={fetching?"btn-secondary":"btn-dark"} style={{width:"100%",padding:"9px",fontSize:13,marginBottom:8}}>
+          {fetching?"⏳ Sedang mencari...":"🔍 Cari Kumpulan WhatsApp Saya"}
+        </button>
+        {fetchMsg&&<div style={{fontSize:12,padding:"7px 10px",borderRadius:"var(--r-sm)",marginBottom:8,background:mBg,color:mColor,border:`1px solid ${mBdr}`}}>{fetchMsg}</div>}
+        {groups.length>0&&(
+          <div style={{border:"1px solid var(--border)",borderRadius:"var(--r-sm)",overflow:"hidden"}}>
+            <div style={{fontSize:10,color:"var(--text3)",padding:"6px 12px",background:"var(--surface2)",borderBottom:"1px solid var(--border)",fontWeight:700,letterSpacing:"0.5px",textTransform:"uppercase"}}>Pilih Kumpulan Sekolah</div>
+            {groups.map((g,i)=>(
+              <div key={g.id} className="group-row" onClick={()=>{set("waGroupId",g.id);set("waGroupName",g.name);setFetchMsg(`✅ Dipilih: ${g.name}`)}}
+                style={{background:local.waGroupId===g.id?"var(--accent-bg)":"var(--surface)",borderTop:i>0?"1px solid var(--border)":"none"}}>
+                <div style={{width:32,height:32,borderRadius:"50%",background:"var(--purple-bg)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>👥</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:600,color:"var(--text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{g.name}</div>
+                  <div style={{fontSize:10,color:"var(--text3)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{g.id}</div>
+                </div>
+                {local.waGroupId===g.id&&<span style={{color:"var(--accent)",fontSize:16}}>✓</span>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Telegram */}
+      <div className="settings-card">
+        <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:14}}>
+          <span style={{fontSize:18}}>📨</span>
+          <div style={{fontSize:14,fontWeight:700,color:"var(--text)"}}>Tetapan Telegram Bot</div>
+          <span style={{fontSize:10,padding:"2px 8px",background:"var(--info-bg)",color:"var(--info)",border:"1px solid var(--info-border)",borderRadius:20,fontWeight:700}}>PERCUMA</span>
+        </div>
+        {[
+          ["Token Bot Telegram","tgToken","Dapatkan dari @BotFather di Telegram","123456789:ABCDEFGHijklmnopqrst..."],
+          ["Chat ID Kumpulan","tgChatId","ID kumpulan Telegram (bermula -)","cth: -1002152935710"],
+          ["Topic ID (pilihan)","tgTopicId","ID topik forum — kosongkan jika tiada topik","cth: 9391"],
+        ].map(([lbl,key,hint,ph])=>(
+          <div key={key} style={{marginBottom:11}}>
+            <label style={{fontSize:12,fontWeight:600,color:"var(--text2)",display:"block",marginBottom:5}}>{lbl}</label>
+            <input value={local[key]||""} onChange={e=>set(key,e.target.value)} placeholder={ph} style={{width:"100%",padding:"8px 11px",fontSize:13,border:"1.5px solid var(--border)",borderRadius:"var(--r-sm)",background:"var(--surface)",color:"var(--text)"}}/>
+            <div style={{fontSize:11,color:"var(--text3)",marginTop:3}}>{hint}</div>
+          </div>
+        ))}
+        {local.tgTopicId&&(
+          <div style={{fontSize:12,padding:"7px 10px",background:"var(--accent-bg)",border:"1px solid var(--accent-border)",borderRadius:"var(--r-sm)",color:"var(--accent)"}}>
+            ✅ Mesej akan dihantar ke topik ID <strong>{local.tgTopicId}</strong>
+          </div>
+        )}
+      </div>
+
+      <button onClick={()=>onSave(local)} className="btn-primary" style={{padding:"10px 24px",fontSize:14}}>💾 Simpan Tetapan</button>
+
+      {/* Panel Google SSO */}
+      <div className="settings-card" style={{marginTop:8}}>
+        <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:12}}>
+          <svg width="20" height="20" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          <div style={{fontSize:14,fontWeight:700,color:"var(--text)"}}>Google SSO Login</div>
+          <span style={{fontSize:10,padding:"2px 8px",background:isSSOConfigured()?"var(--accent-bg)":"var(--bg2)",color:isSSOConfigured()?"var(--accent)":"var(--text3)",border:`1px solid ${isSSOConfigured()?"var(--accent-border)":"var(--border)"}`,borderRadius:20,fontWeight:700}}>{isSSOConfigured()?"AKTIF":"BELUM DIKONFIGURASI"}</span>
+        </div>
+
+        {isSSOConfigured()&&ssoUser&&(
+          <div className="sso-user-card" style={{marginBottom:12}}>
+            {ssoUser.picture
+              ?<img src={ssoUser.picture} className="sso-user-avatar" alt=""/>
+              :<div className="sso-user-avatar-placeholder">{ssoUser.name[0]}</div>
+            }
+            <div style={{flex:1,minWidth:0}}>
+              <div className="sso-user-name">{ssoUser.name}</div>
+              <div className="sso-user-email">{ssoUser.email}</div>
+            </div>
+            <div style={{fontSize:10,background:"var(--accent-bg)",color:"var(--accent)",padding:"2px 7px",borderRadius:20,fontWeight:700,border:"1px solid var(--accent-border)"}}>✓ Log masuk</div>
+          </div>
+        )}
+
+        <div style={{fontSize:12,color:"var(--text2)",marginBottom:12,lineHeight:1.7}}>
+          Google SSO membenarkan log masuk menggunakan akaun Google. Dapatkan <strong>Client ID</strong> dari <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style={{color:"var(--info)"}}>Google Cloud Console</a>, kemudian edit fail HTML dan gantikan nilai <code style={{background:"var(--surface2)",padding:"1px 5px",borderRadius:4,fontSize:11,fontFamily:"'DM Mono',monospace"}}>GOOGLE_CLIENT_ID</code>.
+        </div>
+
+        <div style={{background:"var(--surface2)",borderRadius:"var(--r-sm)",padding:"10px 12px",fontFamily:"'DM Mono',monospace",fontSize:11,color:"var(--text2)",marginBottom:10,lineHeight:1.8,wordBreak:"break-all"}}>
+          <span style={{color:"var(--text3)"}}>// Dalam kod HTML:</span><br/>
+          <span style={{color:"var(--info)"}}>const</span> GOOGLE_CLIENT_ID = <span style={{color:"var(--accent)"}}>"{isSSOConfigured()?GOOGLE_CLIENT_ID:"MASUKKAN_CLIENT_ID_ANDA.apps.googleusercontent.com"}"</span>;
+        </div>
+
+        <div style={{fontSize:12,fontWeight:600,color:"var(--text2)",marginBottom:6}}>Langkah-langkah:</div>
+        <div style={{fontSize:11,color:"var(--text2)",lineHeight:2}}>
+          1️⃣ Buka <strong>console.cloud.google.com</strong> → New Project<br/>
+          2️⃣ APIs &amp; Services → OAuth consent screen → External<br/>
+          3️⃣ Credentials → Create → OAuth 2.0 Client ID → Web application<br/>
+          4️⃣ Authorized Origins: <code style={{background:"var(--surface2)",padding:"1px 4px",borderRadius:3,fontSize:10,fontFamily:"monospace"}}>https://username.github.io</code><br/>
+          5️⃣ Salin Client ID → tampal dalam kod HTML
+        </div>
+      </div>
+
+      {/* Log Audit */}
+      <div className="settings-card" style={{marginTop:8}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+          <div style={{fontSize:14,fontWeight:700,color:"var(--text)",display:"flex",alignItems:"center",gap:7}}>📋 Log Aktiviti</div>
+          <button onClick={()=>{if(confirm("Padam semua log?"))localStorage.removeItem("bday-audit")}} style={{fontSize:11,padding:"3px 9px",background:"transparent",color:"#b91c1c",border:"1px solid #fca5a5",borderRadius:6,cursor:"pointer",fontFamily:"inherit"}}>Padam Log</button>
+        </div>
+        <div style={{background:"#0f172a",borderRadius:"var(--r-sm)",padding:"10px 12px",fontFamily:"'DM Mono',monospace",fontSize:11,maxHeight:160,overflowY:"auto",lineHeight:1.9}}>
+          {(()=>{
+            try{
+              const logs=JSON.parse(localStorage.getItem("bday-audit")||"[]");
+              if(logs.length===0)return<div style={{color:"#475569"}}>Tiada aktiviti direkod</div>;
+              return logs.map((l,i)=>(
+                <div key={i} style={{color:"#94a3b8",marginBottom:1}}>
+                  <span style={{color:"#475569"}}>{new Date(l.time).toLocaleString("ms-MY",{dateStyle:"short",timeStyle:"short"})} </span>
+                  <span style={{color:"#e2e8f0"}}>{l.action}</span>
+                </div>
+              ));
+            }catch{return<div style={{color:"#475569"}}>—</div>}
+          })()}
+        </div>
+        <div style={{fontSize:11,color:"var(--text3)",marginTop:6}}>Log ini disimpan dalam peranti anda sahaja</div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Form Modal ─────────────────────────────────────────────── */
+function FormModal({contact,onClose,onSave}){
+  const [f,setF]=useState(contact||{name:"",role:"Guru",dob:"",phone:"",notes:""});
+  const set=(k,v)=>setF(x=>({...x,[k]:v}));
+  return(
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-box" style={{width:"min(430px,96vw)",maxHeight:"90vh",overflowY:"auto",padding:"20px"}} onClick={e=>e.stopPropagation()}>
+        <div style={{fontSize:15,fontWeight:700,color:"var(--text)",marginBottom:16}}>{contact?"✏️ Kemaskini Kenalan":"➕ Tambah Kenalan Baru"}</div>
+        {[["Nama Penuh *","name","text","Masukkan nama penuh..."],["Tarikh Lahir *","dob","date",""],["Nombor Telefon (WhatsApp)","phone","tel","cth: 601112345678"]].map(([lbl,key,type,ph])=>(
+          <div key={key} style={{marginBottom:11}}>
+            <label style={{fontSize:12,fontWeight:600,color:"var(--text2)",display:"block",marginBottom:5}}>{lbl}</label>
+            <input type={type} value={f[key]||""} onChange={e=>set(key,e.target.value)} placeholder={ph} style={{width:"100%",padding:"8px 11px",fontSize:13,border:"1.5px solid var(--border)",borderRadius:"var(--r-sm)",background:"var(--surface)",color:"var(--text)"}}/>
+          </div>
+        ))}
+        <div style={{marginBottom:11}}>
+          <label style={{fontSize:12,fontWeight:600,color:"var(--text2)",display:"block",marginBottom:5}}>Peranan *</label>
+          <select value={f.role} onChange={e=>set("role",e.target.value)} style={{width:"100%",padding:"8px 11px",fontSize:13,border:"1.5px solid var(--border)",borderRadius:"var(--r-sm)",background:"var(--surface)",color:"var(--text)"}}>
+            {ROLES.map(r=><option key={r}>{r}</option>)}
+          </select>
+        </div>
+        <div style={{marginBottom:16}}>
+          <label style={{fontSize:12,fontWeight:600,color:"var(--text2)",display:"block",marginBottom:5}}>Nota (pilihan)</label>
+          <textarea value={f.notes||""} onChange={e=>set("notes",e.target.value)} rows={2} placeholder="Maklumat tambahan..." style={{width:"100%",padding:"8px 11px",fontSize:13,border:"1.5px solid var(--border)",borderRadius:"var(--r-sm)",background:"var(--surface)",color:"var(--text)",resize:"vertical"}}/>
+        </div>
+        <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+          <button onClick={onClose} className="btn-secondary" style={{padding:"8px 14px",fontSize:13}}>Batal</button>
+          <button onClick={()=>{if(!f.name||!f.dob){alert("Sila isi nama dan tarikh lahir.");return}onSave(f)}} className="btn-primary" style={{padding:"8px 18px",fontSize:13}}>Simpan</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
