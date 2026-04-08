@@ -293,13 +293,21 @@ function buildMsg(c){
   const a=getAge(c.dob)+1;
   const emoji=c.role==="Murid"?"🎒":"🎓";
   const panggilan=c.role==="Murid"?"murid kami":"rakan sekerja kami";
-  return`🎂 *SELAMAT HARI LAHIR!*\n\n${emoji} *${c.name}*\n_${c.role}${c.notes?" — "+c.notes:""}_\n\nHari ini ${panggilan} yang istimewa menyambut ulang tahun kelahiran yang ke-*${a}*! 🎉\n\nSemoga panjang umur, murah rezeki, dikekalkan kesihatan yang baik, dan sentiasa berada dalam rahmat Allah SWT.\n\n_Daripada seluruh warga SK Kiandongo_ 🌟`;
+  // Umur HANYA dipapar untuk Murid
+  const barisPesan=c.role==="Murid"
+    ?`Hari ini ${panggilan} yang istimewa menyambut ulang tahun kelahiran yang ke-*${a}*! 🎉`
+    :`Hari ini ${panggilan} yang istimewa menyambut hari lahir dengan penuh kegembiraan! 🎉`;
+  return`🎂 *SELAMAT HARI LAHIR!*\n\n${emoji} *${c.name}*\n_${c.role}${c.notes?" — "+c.notes:""}_\n\n${barisPesan}\n\nSemoga panjang umur, murah rezeki, dikekalkan kesihatan yang baik, dan sentiasa berada dalam rahmat Allah SWT.\n\n_Daripada seluruh warga SK Kiandongo_ 🌟`;
 }
 
 function buildReminderMsg(c,days){
   const a=getAge(c.dob)+1;
   const d=new Date(c.dob);
-  return`📅 *PERINGATAN HARI LAHIR*\n\n⏰ ${days} hari lagi!\n\n*${c.name}* (${c.role}) akan menyambut hari lahir ke-*${a}* pada *${d.getDate()} ${MONTHS_FULL[d.getMonth()]}*.\n\nSediakan ucapan dan kejutan! 🎁\n\n_— SK Kiandongo_`;
+  // Umur HANYA dipapar untuk Murid
+  const barisUmur=c.role==="Murid"
+    ?`*${c.name}* (${c.role}) akan menyambut hari lahir ke-*${a}* pada *${d.getDate()} ${MONTHS_FULL[d.getMonth()]}*.`
+    :`*${c.name}* (${c.role}) akan menyambut hari lahir pada *${d.getDate()} ${MONTHS_FULL[d.getMonth()]}*.`;
+  return`📅 *PERINGATAN HARI LAHIR*\n\n⏰ ${days} hari lagi!\n\n${barisUmur}\n\nSediakan ucapan dan kejutan! 🎁\n\n_— SK Kiandongo_`;
 }
 
 function parseDate(raw){
@@ -423,7 +431,12 @@ function isEmelDibenarkan(email){
   return EMEL_DIBENARKAN.some(e=>e.toLowerCase()===email.toLowerCase());
 }
 
-const DEF_SETTINGS={tgToken:"",tgChatId:"",tgTopicId:"",fonnteToken:"",waGroupId:"",waGroupName:"",hariAwal:"7"};
+const DEF_SETTINGS={tgToken:"",tgChatId:"",tgTopicId:"",fonnteToken:"",waGroupId:"",waGroupName:"",hariAwal:"7",
+  autoAktif:true,      // automasi harian aktif/tidak
+  autoJam:"7",         // jam hantar (0-23)
+  autoKirimanKey:""    // simpan tarikh+senarai terakhir hantar (auto)
+};
+const AUTOKEY="bday-v8-auto"; // localStorage key untuk rekod hantar harian
 
 function App(){
   const [contacts,setContacts]=useState(()=>load(CKEY,[]));
@@ -436,6 +449,11 @@ function App(){
   const [sending,setSending]=useState({});
   const [autoLog,setAutoLog]=useState([]);
   const [autoRunning,setAutoRunning]=useState(false);
+  const [autoStatus,setAutoStatus]=useState(null); // {time, count, next}
+  const contactsRef=useRef(contacts);
+  const settingsRef=useRef(settings);
+  useEffect(()=>{contactsRef.current=contacts},[contacts]);
+  useEffect(()=>{settingsRef.current=settings},[settings]);
 
   // ── State keselamatan ──────────────────────────────────────
   const [ssoUser,setSsoUser]=useState(()=>getSSOUser());
@@ -634,6 +652,174 @@ function App(){
     showToast(`✅ ${contacts.length} kenalan dieksport!`);
   };
 
+  // ── Semak sudah hantar hari ini ─────────────────────────
+  const sudahHantarHariIni=(targetDate)=>{
+    try{
+      const rec=JSON.parse(localStorage.getItem(AUTOKEY)||"{}");
+      const today=new Date().toISOString().slice(0,10);
+      return rec.tarikh===today&&rec.targetDate===targetDate;
+    }catch{return false}
+  };
+
+  const rekodKiriman=(targetDate,count)=>{
+    try{
+      localStorage.setItem(AUTOKEY,JSON.stringify({
+        tarikh:new Date().toISOString().slice(0,10),
+        targetDate,
+        count,
+        masa:new Date().toLocaleTimeString("ms-MY"),
+      }));
+    }catch{}
+  };
+
+  const getStatusAuto=()=>{
+    try{return JSON.parse(localStorage.getItem(AUTOKEY)||"null")}catch{return null}
+  };
+
+  // ── Fungsi automasi dalaman (boleh dipanggil tanpa UI) ────
+  const jalankanAutomasiSenyap=async(sett,contacts_list,isManual=false)=>{
+    if(!contacts_list||contacts_list.length===0)return 0;
+    const hariAwal=parseInt(sett.hariAwal)||0;
+    const today=new Date().toISOString().slice(0,10);
+
+    // Semak jika sudah dihantar hari ini (skip jika bukan manual)
+    if(!isManual){
+      try{
+        const rec=JSON.parse(localStorage.getItem(AUTOKEY)||"{}");
+        if(rec.tarikh===today){
+          return -1; // Sudah hantar hari ini
+        }
+      }catch{}
+    }
+
+    const apiTg=async(mesej)=>{
+      if(!sett.tgToken||!sett.tgChatId)return{ok:false,err:"token kosong"};
+      const body={chat_id:sett.tgChatId,text:mesej,parse_mode:"Markdown"};
+      if(sett.tgTopicId)body.message_thread_id=parseInt(sett.tgTopicId);
+      try{
+        const r=await fetch(`https://api.telegram.org/bot${sett.tgToken}/sendMessage`,
+          {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+        const d=await r.json();
+        return d.ok?{ok:true}:{ok:false,err:d.description};
+      }catch(e){return{ok:false,err:e.message}}
+    };
+
+    const apiWaGroup=async(mesej)=>{
+      if(!sett.fonnteToken||!sett.waGroupId)return{ok:false,err:"token kosong"};
+      const fd=new FormData();
+      fd.append("target",sett.waGroupId);
+      fd.append("message",mesej.replace(/\*/g,"").replace(/_/g,""));
+      fd.append("countryCode","60");
+      try{
+        const r=await fetch("https://api.fonnte.com/send",{method:"POST",headers:{"Authorization":sett.fonnteToken},body:fd});
+        const d=await r.json();
+        return d.status?{ok:true}:{ok:false,err:d.reason||"Gagal"};
+      }catch(e){return{ok:false,err:e.message}}
+    };
+
+    const apiWaIndividu=async(mesej,phone)=>{
+      if(!sett.fonnteToken||!phone)return{ok:false,err:"token/nombor kosong"};
+      const fd=new FormData();
+      fd.append("target",phone.replace(/\D/g,""));
+      fd.append("message",mesej.replace(/\*/g,"").replace(/_/g,""));
+      fd.append("countryCode","60");
+      try{
+        const r=await fetch("https://api.fonnte.com/send",{method:"POST",headers:{"Authorization":sett.fonnteToken},body:fd});
+        const d=await r.json();
+        return d.status?{ok:true}:{ok:false,err:d.reason||"Gagal"};
+      }catch(e){return{ok:false,err:e.message}}
+    };
+
+    let jumlah=0;
+    const log=[];
+
+    for(const c of contacts_list){
+      const days=daysUntil(c.dob);
+      const adaHariLahir=days===0;
+      const adaPeringatan=hariAwal>0&&days>0&&days<=hariAwal;
+      if(!adaHariLahir&&!adaPeringatan)continue;
+
+      const mesej=adaHariLahir?buildMsg(c):buildReminderMsg(c,days);
+      log.push(`${c.name} — ${adaHariLahir?"🎂 Hari lahir!":days+" hari lagi"}`);
+
+      if(sett.tgToken&&sett.tgChatId){
+        const r=await apiTg(mesej);
+        log.push(r.ok?"  ✅ Telegram berjaya":"  ❌ Telegram: "+r.err);
+      }
+      if(sett.fonnteToken&&sett.waGroupId){
+        const r=await apiWaGroup(mesej);
+        log.push(r.ok?"  ✅ WhatsApp kumpulan berjaya":"  ❌ WA kumpulan: "+r.err);
+      }
+      if(sett.fonnteToken&&c.phone&&adaHariLahir){
+        const r=await apiWaIndividu(mesej,c.phone);
+        log.push(r.ok?`  ✅ WA peribadi (${c.phone}) berjaya`:"  ❌ WA peribadi: "+r.err);
+      }
+      jumlah++;
+    }
+
+    // Rekod kiriman
+    rekodKiriman(today, jumlah);
+    logAudit(`Auto-hantar ${isManual?"manual":"automatik"}: ${jumlah} kenalan diproses`);
+    return{jumlah,log};
+  };
+
+  // ── useEffect: Pemantau automasi harian ──────────────────
+  // Berjalan semula apabila toggle ON/OFF atau jam berubah (selepas Simpan Tetapan)
+  useEffect(()=>{
+    // Hentikan segera jika automasi TIDAK AKTIF
+    if(!settings.autoAktif){
+      setAutoStatus(getStatusAuto()); // kemas kini UI status sahaja
+      return;
+    }
+
+    const semakDanHantar=async()=>{
+      const sett=settingsRef.current;
+      const contacts_list=contactsRef.current;
+
+      // Periksa sekali lagi — mungkin ditukar semasa interval
+      if(!sett.autoAktif)return;
+      if(!sett.tgToken&&!sett.fonnteToken)return;
+
+      const jamSasaran=parseInt(sett.autoJam)||7;
+      const now=new Date();
+      const jamSekarang=now.getHours();
+      const minSekarang=now.getMinutes();
+
+      // Hanya hantar dalam tetingkap masa: jam sasaran, atau awal jam berikutnya
+      const dalamTetingkap=(jamSekarang===jamSasaran)||
+        (jamSekarang===jamSasaran+1&&minSekarang<10);
+      if(!dalamTetingkap)return;
+
+      // Semak sudah hantar hari ini — elak duplikat
+      try{
+        const rec=JSON.parse(localStorage.getItem(AUTOKEY)||"{}");
+        const today=new Date().toISOString().slice(0,10);
+        if(rec.tarikh===today)return;
+      }catch{}
+
+      // Jalankan hantar senyap
+      const result=await jalankanAutomasiSenyap(sett,contacts_list,false);
+      if(result&&result.jumlah!==undefined){
+        setAutoStatus(getStatusAuto());
+        if(result.jumlah>0){
+          setAutoLog(prev=>[
+            ...result.log.map(m=>({time:fmtNow(),msg:m,
+              type:m.includes("✅")?"ok":m.includes("❌")?"err":m.includes("⚠️")?"warn":"info"})),
+            ...prev
+          ].slice(0,50));
+          showToast(`🤖 Auto-hantar selesai — ${result.jumlah} kenalan`);
+        }
+      }
+    };
+
+    // Semak segera apabila aktif / jam berubah
+    semakDanHantar();
+
+    // Semak setiap 10 minit selagi aktif
+    const interval=setInterval(semakDanHantar,10*60*1000);
+    return()=>clearInterval(interval); // Bersihkan interval bila mati/berubah
+  },[settings.autoAktif,settings.autoJam]);
+
   // ── Papar skrin kunci ─────────────────────────────────────
   if(locked||setupPin){
     return <LockScreen
@@ -735,38 +921,18 @@ function App(){
 
   const jalankanAutomasi=async()=>{
     if(contacts.length===0){showToast("Tiada kenalan dalam senarai","err");return}
-    setAutoRunning(true);setAutoLog([]);
-    addLog(`Memulakan semakan — ${contacts.length} kenalan`,"info");
-    const hariAwal=parseInt(settings.hariAwal)||0;
-    let jumlah=0;
-    for(const c of contacts){
-      const days=daysUntil(c.dob);
-      const adaHariLahir=days===0;
-      const adaPeringatan=hariAwal>0&&days>0&&days<=hariAwal;
-      if(!adaHariLahir&&!adaPeringatan)continue;
-      const mesej=adaHariLahir?buildMsg(c):buildReminderMsg(c,days);
-      addLog(`${c.name} (${c.role}) — ${adaHariLahir?"🎂 Hari lahir!":days+" hari lagi"}`,"info");
-      if(settings.tgToken&&settings.tgChatId){
-        const r=await apiTelegram(mesej);
-        if(r.ok)addLog(`  ✅ Telegram berjaya`,"ok");
-        else addLog(`  ❌ Telegram gagal: ${r.err}`,"err");
-      }else{addLog(`  ⚠️ Telegram: token/chat ID belum diisi`,"warn")}
-      if(settings.fonnteToken&&settings.waGroupId){
-        const r=await apiFonnteGroup(mesej);
-        if(r.ok)addLog(`  ✅ WhatsApp kumpulan berjaya`,"ok");
-        else addLog(`  ❌ WhatsApp kumpulan gagal: ${r.err}`,"err");
-      }else{addLog(`  ⚠️ WhatsApp: token/group ID belum diisi`,"warn")}
-      if(settings.fonnteToken&&c.phone&&adaHariLahir){
-        const r=await apiFonnteIndividu(mesej,c.phone);
-        if(r.ok)addLog(`  ✅ WhatsApp peribadi (${c.phone}) berjaya`,"ok");
-        else addLog(`  ❌ WhatsApp peribadi gagal: ${r.err}`,"err");
-      }
-      jumlah++;
+    setAutoRunning(true);
+    setAutoLog([{time:fmtNow(),msg:`Memulakan semakan — ${contacts.length} kenalan`,type:"info"}]);
+    const result=await jalankanAutomasiSenyap(settings,contacts,true); // isManual=true
+    if(result&&result.jumlah!==undefined){
+      const logs=result.log.map(m=>({time:fmtNow(),msg:m,type:m.includes("✅")?"ok":m.includes("❌")?"err":m.includes("⚠️")?"warn":"info"}));
+      setAutoLog(logs);
+      setAutoStatus(getStatusAuto());
+      if(result.jumlah===0)addLog("Tiada hari lahir hari ini atau dalam tempoh peringatan","warn");
+      else addLog(`Selesai — ${result.jumlah} kenalan diproses`,"ok");
+      showToast(result.jumlah>0?`✅ Selesai — ${result.jumlah} kenalan diproses`:"ℹ️ Tiada hari lahir untuk dihantar hari ini");
     }
-    if(jumlah===0)addLog("Tiada hari lahir hari ini atau dalam tempoh peringatan","warn");
-    else addLog(`Selesai — ${jumlah} kenalan diproses`,"ok");
     setAutoRunning(false);
-    showToast(jumlah>0?`✅ Automasi selesai — ${jumlah} kenalan diproses`:"ℹ️ Tiada hari lahir untuk dihantar hari ini");
   };
 
   const hasFonnte=!!settings.fonnteToken;
@@ -1261,6 +1427,37 @@ function Dashboard({today,upcoming,contacts,onTg,onWa,onWaGroup,onWaManual,sendi
         </div>
       )}
 
+      {/* Status Automasi */}
+      {(()=>{
+        try{
+          const rec=JSON.parse(localStorage.getItem("bday-v8-auto")||"null");
+          const sett=load("bday-v8-settings",{autoAktif:true,autoJam:"7"});
+          if(!sett.autoAktif)return(
+            <div style={{background:"var(--bg2)",border:"1px solid var(--border)",borderRadius:"var(--r-sm)",padding:"9px 13px",marginBottom:14,display:"flex",alignItems:"center",gap:10,justifyContent:"space-between"}}>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <span style={{fontSize:15}}>⏸️</span>
+                <div style={{fontSize:12,color:"var(--text3)"}}>Automasi harian <strong>tidak aktif</strong></div>
+              </div>
+              <span style={{fontSize:11,color:"var(--text3)"}}>Hidupkan dalam Tetapan →</span>
+            </div>
+          );
+          const jamLabel=String(sett.autoJam||7).padStart(2,"0")+":00";
+          return(
+            <div style={{background:"var(--accent-bg)",border:"1px solid var(--accent-border)",borderRadius:"var(--r-sm)",padding:"9px 13px",marginBottom:14,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+              <div style={{width:8,height:8,borderRadius:"50%",background:"var(--accent)",animation:"pulse 2s infinite",flexShrink:0}}/>
+              <div style={{flex:1,minWidth:150}}>
+                <div style={{fontSize:12,fontWeight:700,color:"var(--accent)"}}>🤖 Automasi Aktif — Hantar pukul {jamLabel} setiap hari</div>
+                <div style={{fontSize:11,color:"var(--text2)",marginTop:2}}>
+                  {rec
+                    ?`Terakhir: ${rec.tarikh} pukul ${rec.masa} · ${rec.count} kenalan`
+                    :"Belum pernah dihantar — menunggu masa yang ditetapkan"}
+                </div>
+              </div>
+            </div>
+          );
+        }catch{return null}
+      })()}
+
       {/* Akan datang */}
       <div>
         <div className="section-hdr">
@@ -1485,18 +1682,71 @@ function Settings({settings,onSave,ssoUser,ssoConfigured,onSetupPin,onRemovePin,
     <div style={{maxWidth:520}}>
 
       {/* Automasi */}
-      <div className="settings-card">
-        <div style={{fontSize:14,fontWeight:700,color:"var(--text)",marginBottom:12,display:"flex",alignItems:"center",gap:7}}>⚡ Tetapan Automasi</div>
-        <div style={{marginBottom:10}}>
-          <label style={{fontSize:12,fontWeight:600,color:"var(--text2)",display:"block",marginBottom:5}}>Hantar Peringatan Awal (hari)</label>
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <input type="number" min="0" max="30" value={local.hariAwal||"7"} onChange={e=>set("hariAwal",e.target.value)} style={{width:80,padding:"7px 10px",fontSize:13,border:"1.5px solid var(--border)",borderRadius:"var(--r-sm)",background:"var(--surface)",color:"var(--text)"}}/>
-            <span style={{fontSize:12,color:"var(--text3)"}}>0 = hari lahir sahaja · 7 = peringatan 7 hari awal</span>
+      <div className="settings-card" style={{borderColor:local.autoAktif?"var(--accent-border)":"var(--border)",boxShadow:local.autoAktif?"0 0 0 1px var(--accent-border), var(--shadow)":"var(--shadow)"}}>
+        {/* Header + Toggle */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:local.autoAktif?14:0}}>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <span style={{fontSize:20}}>{local.autoAktif?"🤖":"⏸️"}</span>
+            <div>
+              <div style={{fontSize:14,fontWeight:700,color:"var(--text)"}}>Automasi Harian</div>
+              <div style={{fontSize:11,color:local.autoAktif?"var(--accent)":"var(--text3)",fontWeight:600,marginTop:1}}>
+                {local.autoAktif?"Aktif — mesej dihantar secara automatik":"Tidak aktif — tiada mesej dihantar"}
+              </div>
+            </div>
           </div>
+          {/* Toggle switch */}
+          <button onClick={()=>set("autoAktif",!local.autoAktif)}
+            title={local.autoAktif?"Klik untuk matikan":"Klik untuk aktifkan"}
+            style={{width:52,height:28,borderRadius:14,background:local.autoAktif?"var(--accent)":"var(--border2)",border:"none",position:"relative",cursor:"pointer",transition:"background 0.25s",flexShrink:0}}>
+            <div style={{position:"absolute",top:4,left:local.autoAktif?26:4,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"left 0.25s",boxShadow:"0 1px 4px rgba(0,0,0,0.25)"}}/>
+          </button>
         </div>
-        <div style={{fontSize:11,color:"var(--text2)",padding:"8px 10px",background:"var(--surface2)",borderRadius:"var(--r-sm)"}}>
-          💡 Klik butang <strong>⚡ Hantar Semua</strong> di bahagian atas untuk hantar ucapan secara serentak.
-        </div>
+
+        {/* Isi panel — hanya papar bila AKTIF */}
+        {local.autoAktif&&(
+          <div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+              <div>
+                <label style={{fontSize:12,fontWeight:600,color:"var(--text2)",display:"block",marginBottom:5}}>Jam Hantar Automatik</label>
+                <select value={local.autoJam||"7"} onChange={e=>set("autoJam",e.target.value)}
+                  style={{width:"100%",padding:"8px 10px",fontSize:13,border:"1.5px solid var(--border)",borderRadius:"var(--r-sm)",background:"var(--surface)",color:"var(--text)"}}>
+                  {Array.from({length:24},(_,i)=>(
+                    <option key={i} value={i}>{String(i).padStart(2,"0")}:00 {i<12?"pagi":i===12?"tengahari":"petang/malam"}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={{fontSize:12,fontWeight:600,color:"var(--text2)",display:"block",marginBottom:5}}>Peringatan Awal (hari)</label>
+                <input type="number" min="0" max="30" value={local.hariAwal||"7"} onChange={e=>set("hariAwal",e.target.value)}
+                  style={{width:"100%",padding:"8px 10px",fontSize:13,border:"1.5px solid var(--border)",borderRadius:"var(--r-sm)",background:"var(--surface)",color:"var(--text)"}}/>
+              </div>
+            </div>
+
+            <div style={{fontSize:12,color:"var(--text2)",padding:"10px 12px",background:"var(--accent-bg)",border:"1px solid var(--accent-border)",borderRadius:"var(--r-sm)",lineHeight:1.8,marginBottom:10}}>
+              📋 <strong>Cara kerja:</strong> Sistem semak setiap 10 minit. Apabila jam sasaran tiba, mesej dihantar secara automatik ke Telegram & WhatsApp.<br/>
+              🔁 Setiap kenalan hanya dihantar <strong>sekali sehari</strong> walaupun tab dibuka berkali-kali.<br/>
+              ⚠️ <span style={{color:"var(--warn)"}}>Tab mesti kekal terbuka</span> — automasi berhenti jika pelayar ditutup.
+            </div>
+          </div>
+        )}
+
+        {(()=>{
+          try{
+            const rec=JSON.parse(localStorage.getItem("bday-v8-auto")||"null");
+            if(!rec)return(
+              <div style={{fontSize:11,color:"var(--text3)",marginTop:local.autoAktif?0:10}}>
+                {local.autoAktif?"⏳ Belum ada kiriman automatik direkodkan. Sistem akan hantar pada jam yang ditetapkan.":"Aktifkan automasi untuk mula menghantar mesej secara automatik."}
+              </div>
+            );
+            return(
+              <div style={{fontSize:11,padding:"8px 10px",background:"var(--surface2)",border:"1px solid var(--border)",borderRadius:"var(--r-sm)",marginTop:local.autoAktif?0:10,color:"var(--text2)"}}>
+                🕐 Kiriman terakhir: <strong>{rec.tarikh}</strong> pukul <strong>{rec.masa}</strong>
+                {rec.count>0&&<span style={{color:"var(--accent)",fontWeight:700}}> · {rec.count} kenalan berjaya</span>}
+                {rec.count===0&&<span style={{color:"var(--text3)"}}> · Tiada hari lahir pada hari itu</span>}
+              </div>
+            );
+          }catch{return null}
+        })()}
       </div>
 
       {/* Fonnte */}
