@@ -3,7 +3,7 @@
 Aplikasi web untuk mengurus, menjejak, dan menghantar peringatan hari lahir bagi guru, staf, dan murid.
 
 ## 🚀 Live Demo
-https://USERNAME.github.io/REPO/
+https://g-95272556-collab.github.io/BDReminder/
 
 ## ✨ Ciri Utama
 - Dashboard hari lahir
