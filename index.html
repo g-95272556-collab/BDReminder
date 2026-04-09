@@ -269,6 +269,29 @@ const {useState,useEffect,useRef}=React;
 const MONTHS_FULL=["Januari","Februari","Mac","April","Mei","Jun","Julai","Ogos","September","Oktober","November","Disember"];
 const ROLES=["Guru","Staf Sokongan","Murid"];
 const PALETTE=["#4A90D9","#7B68EE","#20B2AA","#E87E3E","#9370DB","#3CB371","#CD853F","#DA70D6"];
+const KELAS_LIST=["1 NILAM","2 INTAN","3 KRISTAL","4 MUTIARA","5 DELIMA","6 BAIDURI"];
+
+// Group WA mengikut kelas — selaras dengan Apps Script v2.5
+const GROUP_KELAS={
+  "1 NILAM":   "120363408263111964@g.us",
+  "2 INTAN":   "120363307119469701@g.us",
+  "3 KRISTAL": "120363158710638763@g.us",
+  "4 MUTIARA": "120363047423182758@g.us",
+  "5 DELIMA":  "120363040172356242@g.us",
+  "6 BAIDURI": "60195327614-1585453088@g.us",
+};
+const GROUP_SEKOLAH="60193386910-1451753957@g.us"; // Guru & Staf
+
+// Dapatkan Group ID berdasarkan peranan dan kelas
+function dapatGroupId(role, kelas){
+  if(role!=="Murid") return GROUP_SEKOLAH;
+  if(!kelas) return GROUP_SEKOLAH;
+  const k=kelas.trim().toUpperCase();
+  for(const key of Object.keys(GROUP_KELAS)){
+    if(key.toUpperCase()===k||k.includes(key.toUpperCase())) return GROUP_KELAS[key];
+  }
+  return GROUP_SEKOLAH; // fallback ke group sekolah
+}
 
 function initials(n){return n.split(" ").slice(0,2).map(w=>w[0]||"").join("").toUpperCase()}
 function avatarColor(n){let h=0;for(let c of n)h=(h*31+c.charCodeAt(0))&0xffffffff;return PALETTE[Math.abs(h)%PALETTE.length]}
@@ -289,25 +312,32 @@ function getAge(dob){
 function fmtDate(dob){const d=new Date(dob);return`${d.getDate()} ${MONTHS_FULL[d.getMonth()]}`}
 function fmtNow(){const d=new Date();return`${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}`}
 
-function buildMsg(c){
+function buildMsg(c,forWa=false){
   const a=getAge(c.dob)+1;
   const emoji=c.role==="Murid"?"🎒":"🎓";
   const panggilan=c.role==="Murid"?"murid kami":"rakan sekerja kami";
+  const kelas=c.kelas?` — ${c.kelas}`:"";
+  const notaTeks=c.notes?` — ${c.notes}`:"";
+  const subTeks=c.role==="Murid"?`${c.role}${kelas}`:`${c.role}${notaTeks}`;
   // Umur HANYA dipapar untuk Murid
   const barisPesan=c.role==="Murid"
     ?`Hari ini ${panggilan} yang istimewa menyambut ulang tahun kelahiran yang ke-*${a}*! 🎉`
     :`Hari ini ${panggilan} yang istimewa menyambut hari lahir dengan penuh kegembiraan! 🎉`;
-  return`🎂 *SELAMAT HARI LAHIR!*\n\n${emoji} *${c.name}*\n_${c.role}${c.notes?" — "+c.notes:""}_\n\n${barisPesan}\n\nSemoga panjang umur, murah rezeki, dikekalkan kesihatan yang baik, dan sentiasa berada dalam rahmat Tuhan yang Maha Esa.\n\n_Daripada seluruh warga SK Kiandongo_ 🌟`;
+  const msg=`🎂 *SELAMAT HARI LAHIR!*\n\n${emoji} *${c.name}*\n_${subTeks}_\n\n${barisPesan}\n\nSemoga panjang umur, murah rezeki, dikekalkan kesihatan yang baik, dan sentiasa berada dalam rahmat Allah SWT.\n\n_Daripada seluruh warga SK Kiandongo_ 🌟`;
+  return forWa?msg.replace(/\*/g,"").replace(/_/g,""):msg;
 }
 
-function buildReminderMsg(c,days){
+function buildReminderMsg(c,days,forWa=false){
   const a=getAge(c.dob)+1;
   const d=new Date(c.dob);
+  const kelas=c.kelas?` — ${c.kelas}`:"";
+  const subTeks=c.role==="Murid"?`${c.role}${kelas}`:c.role;
   // Umur HANYA dipapar untuk Murid
   const barisUmur=c.role==="Murid"
-    ?`*${c.name}* (${c.role}) akan menyambut hari lahir ke-*${a}* pada *${d.getDate()} ${MONTHS_FULL[d.getMonth()]}*.`
-    :`*${c.name}* (${c.role}) akan menyambut hari lahir pada *${d.getDate()} ${MONTHS_FULL[d.getMonth()]}*.`;
-  return`📅 *PERINGATAN HARI LAHIR*\n\n⏰ ${days} hari lagi!\n\n${barisUmur}\n\nSediakan ucapan dan kejutan! 🎁\n\n_— SK Kiandongo_`;
+    ?`*${c.name}* (${subTeks}) akan menyambut hari lahir ke-*${a}* pada *${d.getDate()} ${MONTHS_FULL[d.getMonth()]}*.`
+    :`*${c.name}* (${subTeks}) akan menyambut hari lahir pada *${d.getDate()} ${MONTHS_FULL[d.getMonth()]}*.`;
+  const msg=`📅 *PERINGATAN HARI LAHIR*\n\n⏰ ${days} hari lagi!\n\n${barisUmur}\n\nSediakan ucapan dan kejutan! 🎁\n\n_— SK Kiandongo_`;
+  return forWa?msg.replace(/\*/g,"").replace(/_/g,""):msg;
 }
 
 function parseDate(raw){
@@ -354,17 +384,29 @@ function rowToContact(row){
   let dobRaw=find("tarikh lahir","tarikhLahir","tarikhahir","tarikh_lahir","dob","dateofbirth","birthday","lahir","born","birthdate","tlahir","tarikh");
   let role=find("peranan","role","jawatan","position","kategori","category","jenis","type","kumpulan");
   let phone=String(find("nombor telefon","nombortelefon","telefon","phone","tel","nombor","notelefon","hp","mobile","handphone","phonenumber","nohp")||"").trim().replace(/[\s\-]/g,"");
-  let notes=String(find("nota","notes","catatan","remark","remarks","maklumat","info","kelas","class","tingkatan","tahun")||"").trim();
+  let notes=String(find("nota","notes","catatan","remark","remarks","maklumat","info")||"").trim();
+  let kelas=String(find("kelas","class","tingkatan","tahun","darjah")||"").trim().toUpperCase();
+  // Normalkan kelas — pastikan format betul (contoh "5delima" → "5 DELIMA")
+  if(!kelas&&notes){
+    // Cuba kesan kelas dari nota
+    const kelasPat=notes.toUpperCase().match(/^(\d)\s*(NILAM|INTAN|KRISTAL|MUTIARA|DELIMA|BAIDURI)/);
+    if(kelasPat) kelas=kelasPat[0].trim();
+  }
   if(!name){for(const v of vals){const s=String(v||"").trim();if(s&&s.length>2&&isNaN(s)){name=s;break}}}
   if(!dobRaw){for(const rk of keys){const v=row[rk];if(!v)continue;const s=String(v).trim();if(/\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}/.test(s)||/^\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}$/.test(s)||(/^\d{4,5}$/.test(s)&&parseInt(s)>10000)||v instanceof Date){dobRaw=v;break}}}
   const dob=parseDate(dobRaw);
   const valid=!!name&&!!dob&&!isNaN(new Date(dob));
-  return{name,dob,role:normalizeRole(role),phone,notes,valid,_keys:keys.join(",")};
+  return{name,dob,role:normalizeRole(role),phone,notes,kelas,valid,_keys:keys.join(",")};
 }
 
 function downloadTemplate(){
-  const header="Nama,Tarikh Lahir (DD/MM/YYYY),Peranan,Nombor Telefon,Nota\n";
-  const rows=["Ahmad bin Ali,15/05/1985,Guru,601112345678,Guru Matematik","Siti binti Hassan,23/08/1990,Staf Sokongan,601234567890,","Muhammad Aiman,10/03/2010,Murid,,"].join("\n");
+  const header="Nama,Tarikh Lahir (DD/MM/YYYY),Peranan,Nombor Telefon,Kelas,Nota\n";
+  const rows=[
+    "Ahmad bin Ali,15/05/1985,Guru,601112345678,,Guru Matematik",
+    "Siti binti Hassan,23/08/1990,Staf Sokongan,601234567890,,",
+    "Muhammad Aiman,10/03/2018,Murid,,4 MUTIARA,",
+    "Fiona Chelsa Nell,11/09/2015,Murid,,5 DELIMA,"
+  ].join("\n");
   const blob=new Blob(["\uFEFF"+header+rows],{type:"text/csv;charset=utf-8"});
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a");a.href=url;a.download="template-senarai-kenalan.csv";a.click();URL.revokeObjectURL(url);
@@ -431,10 +473,10 @@ function isEmelDibenarkan(email){
   return EMEL_DIBENARKAN.some(e=>e.toLowerCase()===email.toLowerCase());
 }
 
-const DEF_SETTINGS={tgToken:"",tgChatId:"",tgTopicId:"",fonnteToken:"",waGroupId:"",waGroupName:"",hariAwal:"7",
-  autoAktif:true,      // automasi harian aktif/tidak
-  autoJam:"7",         // jam hantar (0-23)
-  autoKirimanKey:""    // simpan tarikh+senarai terakhir hantar (auto)
+const DEF_SETTINGS={tgToken:"",tgChatId:"",tgTopicId:"",fonnteToken:"",hariAwal:"7",
+  autoAktif:true,
+  autoJam:"7",
+  autoKirimanKey:""
 };
 const AUTOKEY="bday-v8-auto"; // localStorage key untuk rekod hantar harian
 
@@ -704,16 +746,17 @@ function App(){
       }catch(e){return{ok:false,err:e.message}}
     };
 
-    const apiWaGroup=async(mesej)=>{
-      if(!sett.fonnteToken||!sett.waGroupId)return{ok:false,err:"token kosong"};
+    const apiWaKelas=async(mesej,role,kelas)=>{
+      if(!sett.fonnteToken)return{ok:false,err:"token kosong"};
+      const groupId=dapatGroupId(role,kelas);
       const fd=new FormData();
-      fd.append("target",sett.waGroupId);
-      fd.append("message",mesej.replace(/\*/g,"").replace(/_/g,""));
+      fd.append("target",groupId);
+      fd.append("message",mesej);
       fd.append("countryCode","60");
       try{
         const r=await fetch("https://api.fonnte.com/send",{method:"POST",headers:{"Authorization":sett.fonnteToken},body:fd});
         const d=await r.json();
-        return d.status?{ok:true}:{ok:false,err:d.reason||"Gagal"};
+        return d.status?{ok:true,groupId}:{ok:false,err:d.reason||"Gagal",groupId};
       }catch(e){return{ok:false,err:e.message}}
     };
 
@@ -740,18 +783,21 @@ function App(){
       if(!adaHariLahir&&!adaPeringatan)continue;
 
       const mesej=adaHariLahir?buildMsg(c):buildReminderMsg(c,days);
-      log.push(`${c.name} — ${adaHariLahir?"🎂 Hari lahir!":days+" hari lagi"}`);
+      const mesejWa=adaHariLahir?buildMsg(c,true):buildReminderMsg(c,days,true);
+      const kelas=c.kelas||"";
+      log.push(`${c.name}${kelas?" ("+kelas+")":""} — ${adaHariLahir?"🎂 Hari lahir!":days+" hari lagi"}`);
 
       if(sett.tgToken&&sett.tgChatId){
         const r=await apiTg(mesej);
         log.push(r.ok?"  ✅ Telegram berjaya":"  ❌ Telegram: "+r.err);
       }
-      if(sett.fonnteToken&&sett.waGroupId){
-        const r=await apiWaGroup(mesej);
-        log.push(r.ok?"  ✅ WhatsApp kumpulan berjaya":"  ❌ WA kumpulan: "+r.err);
+      if(sett.fonnteToken){
+        const r=await apiWaKelas(mesejWa,c.role,kelas);
+        const namaGroup=c.role==="Murid"&&kelas?kelas:"Guru/Staf";
+        log.push(r.ok?`  ✅ WA ${namaGroup} berjaya`:`  ❌ WA ${namaGroup}: `+r.err);
       }
       if(sett.fonnteToken&&c.phone&&adaHariLahir){
-        const r=await apiWaIndividu(mesej,c.phone);
+        const r=await apiWaIndividu(mesejWa,c.phone);
         log.push(r.ok?`  ✅ WA peribadi (${c.phone}) berjaya`:"  ❌ WA peribadi: "+r.err);
       }
       jumlah++;
@@ -858,16 +904,17 @@ function App(){
     }catch(e){return{ok:false,err:e.message}}
   };
 
-  const apiFonnteGroup=async(mesej)=>{
-    if(!settings.fonnteToken||!settings.waGroupId)return{ok:false,err:"Token/Group ID kosong"};
+  const apiFonnteKelas=async(mesej,role,kelas)=>{
+    if(!settings.fonnteToken)return{ok:false,err:"Token Fonnte kosong"};
+    const groupId=dapatGroupId(role,kelas);
     try{
       const fd=new FormData();
-      fd.append("target",settings.waGroupId);
-      fd.append("message",mesej.replace(/\*/g,"").replace(/_/g,""));
+      fd.append("target",groupId);
+      fd.append("message",mesej);
       fd.append("countryCode","60");
       const r=await fetch("https://api.fonnte.com/send",{method:"POST",headers:{"Authorization":settings.fonnteToken},body:fd});
       const d=await r.json();
-      return d.status?{ok:true}:{ok:false,err:d.reason||"Gagal"};
+      return d.status?{ok:true,groupId}:{ok:false,err:d.reason||"Gagal",groupId};
     }catch(e){return{ok:false,err:e.message}}
   };
 
@@ -897,7 +944,7 @@ function App(){
     if(!settings.fonnteToken){showToast("Sila isi Token Fonnte dalam Tetapan","err");return}
     if(!c.phone){showToast("Kenalan ini tiada nombor telefon","err");return}
     setSending(s=>({...s,[c.id+"wa"]:true}));
-    const r=await apiFonnteIndividu(buildMsg(c),c.phone);
+    const r=await apiFonnteIndividu(buildMsg(c,true),c.phone);
     if(r.ok)showToast(`✅ WhatsApp berjaya dihantar kepada ${c.name}!`);
     else showToast(`❌ Fonnte gagal: ${r.err}`,"err");
     setSending(s=>({...s,[c.id+"wa"]:false}));
@@ -905,16 +952,16 @@ function App(){
 
   const sendWaGroup=async(c)=>{
     if(!settings.fonnteToken){showToast("Sila isi Token Fonnte dalam Tetapan","err");return}
-    if(!settings.waGroupId){showToast("Sila pilih kumpulan WhatsApp dalam Tetapan","err");return}
     setSending(s=>({...s,[c.id+"wag"]:true}));
-    const r=await apiFonnteGroup(buildMsg(c));
-    if(r.ok)showToast(`✅ WhatsApp berjaya dihantar ke ${settings.waGroupName||"kumpulan"}!`);
+    const namaGroup=c.role==="Murid"&&c.kelas?c.kelas:"Guru/Staf";
+    const r=await apiFonnteKelas(buildMsg(c,true),c.role,c.kelas||"");
+    if(r.ok)showToast(`✅ WhatsApp berjaya dihantar ke group ${namaGroup}!`);
     else showToast(`❌ Fonnte gagal: ${r.err}`,"err");
     setSending(s=>({...s,[c.id+"wag"]:false}));
   };
 
   const sendWaManual=(c)=>{
-    const msg=encodeURIComponent(buildMsg(c).replace(/\*/g,"").replace(/_/g,""));
+    const msg=encodeURIComponent(buildMsg(c,true));
     const phone=(c.phone||"").replace(/\D/g,"");
     window.open(phone?`https://wa.me/${phone}?text=${msg}`:`https://wa.me/?text=${msg}`,"_blank");
   };
@@ -1054,7 +1101,7 @@ function App(){
           <Dashboard
             today={today} upcoming={upcoming} contacts={contacts}
             onTg={sendTg} onWa={sendWa} onWaGroup={sendWaGroup} onWaManual={sendWaManual}
-            sending={sending} hasFonnte={hasFonnte} groupName={settings.waGroupName}
+            sending={sending} hasFonnte={hasFonnte}
             onAuto={jalankanAutomasi} autoRunning={autoRunning}
           />
         )}
@@ -1067,7 +1114,7 @@ function App(){
             onDel={c=>{if(confirm(`Padam ${c.name}?`)){saveC(contacts.filter(x=>x.id!==c.id));showToast(`${c.name} dipadam`)}}}
             onUpload={parsed=>setModal({type:"upload",parsed})}
             onTg={sendTg} onWa={sendWa} onWaGroup={sendWaGroup} onWaManual={sendWaManual}
-            sending={sending} hasFonnte={hasFonnte} groupName={settings.waGroupName}
+            sending={sending} hasFonnte={hasFonnte}
           />
         )}
         {tab==="settings"&&(
@@ -1315,7 +1362,7 @@ function LockScreen({locked,setupPin,hasPin,pinInput,setPinInput,pinError,setPin
 
 
 /* ─── Birthday Card ──────────────────────────────────────────── */
-function BCard({c,days,onTg,onWa,onWaGroup,onWaManual,sending,hasFonnte,groupName}){
+function BCard({c,days,onTg,onWa,onWaGroup,onWaManual,sending,hasFonnte}){
   const col=avatarColor(c.name),ini=initials(c.name),nextAge=getAge(c.dob)+1;
   const isToday=days===0;
   const rbClass=c.role==="Guru"?"rb-guru":c.role==="Murid"?"rb-murid":"rb-staf";
@@ -1355,7 +1402,7 @@ function BCard({c,days,onTg,onWa,onWaGroup,onWaManual,sending,hasFonnte,groupNam
               {sending[c.id+"wa"]?"⏳":"💬"} WA Peribadi
             </button>
             <button onClick={()=>onWaGroup(c)} disabled={!!sending[c.id+"wag"]} className="pill pill-wag">
-              {sending[c.id+"wag"]?"⏳":"👥"} {groupName||"WA Kumpulan"}
+              {sending[c.id+"wag"]?"⏳":"👥"} {c.role==="Murid"&&c.kelas?c.kelas:"Guru/Staf"}
             </button>
           </>
         ):(
@@ -1367,7 +1414,7 @@ function BCard({c,days,onTg,onWa,onWaGroup,onWaManual,sending,hasFonnte,groupNam
 }
 
 /* ─── Dashboard ──────────────────────────────────────────────── */
-function Dashboard({today,upcoming,contacts,onTg,onWa,onWaGroup,onWaManual,sending,hasFonnte,groupName,onAuto,autoRunning}){
+function Dashboard({today,upcoming,contacts,onTg,onWa,onWaGroup,onWaManual,sending,hasFonnte,onAuto,autoRunning}){
   const thisMonth=contacts.filter(c=>new Date(c.dob).getMonth()===new Date().getMonth()).length;
   const nextBday=upcoming[0];
   const guruCount=contacts.filter(c=>c.role==="Guru").length;
@@ -1422,7 +1469,7 @@ function Dashboard({today,upcoming,contacts,onTg,onWa,onWaGroup,onWaManual,sendi
             <div className="section-count">{today.length} orang</div>
           </div>
           {today.map(c=>(
-            <BCard key={c.id} c={c} days={0} onTg={onTg} onWa={onWa} onWaGroup={onWaGroup} onWaManual={onWaManual} sending={sending} hasFonnte={hasFonnte} groupName={groupName}/>
+            <BCard key={c.id} c={c} days={0} onTg={onTg} onWa={onWa} onWaGroup={onWaGroup} onWaManual={onWaManual} sending={sending} hasFonnte={hasFonnte}/>
           ))}
         </div>
       )}
@@ -1472,7 +1519,7 @@ function Dashboard({today,upcoming,contacts,onTg,onWa,onWaGroup,onWaManual,sendi
             <div className="empty-sub">Papan pemuka dikemas kini secara automatik</div>
           </div>
         ):upcoming.map(c=>(
-          <BCard key={c.id} c={c} days={c.days} onTg={onTg} onWa={onWa} onWaGroup={onWaGroup} onWaManual={onWaManual} sending={sending} hasFonnte={hasFonnte} groupName={groupName}/>
+          <BCard key={c.id} c={c} days={c.days} onTg={onTg} onWa={onWa} onWaGroup={onWaGroup} onWaManual={onWaManual} sending={sending} hasFonnte={hasFonnte}/>
         ))}
       </div>
 
@@ -1488,7 +1535,7 @@ function Dashboard({today,upcoming,contacts,onTg,onWa,onWaGroup,onWaManual,sendi
 }
 
 /* ─── Contacts ───────────────────────────────────────────────── */
-function Contacts({contacts,allContacts,search,setSearch,roleF,setRoleF,onAdd,onEdit,onDel,onUpload,onTg,onWa,onWaGroup,onWaManual,sending,hasFonnte,groupName}){
+function Contacts({contacts,allContacts,search,setSearch,roleF,setRoleF,onAdd,onEdit,onDel,onUpload,onTg,onWa,onWaGroup,onWaManual,sending,hasFonnte}){
   const fileRef=useRef();
 
   const handleFile=async(file)=>{
@@ -1573,7 +1620,7 @@ function Contacts({contacts,allContacts,search,setSearch,roleF,setRoleF,onAdd,on
               {hasFonnte?(
                 <>
                   <button onClick={()=>onWa(c)} disabled={!!sending[c.id+"wa"]} className="pill pill-wa">{sending[c.id+"wa"]?"⏳":"💬"} WA Peribadi</button>
-                  <button onClick={()=>onWaGroup(c)} disabled={!!sending[c.id+"wag"]} className="pill pill-wag">{sending[c.id+"wag"]?"⏳":"👥"} {groupName||"WA Kumpulan"}</button>
+                  <button onClick={()=>onWaGroup(c)} disabled={!!sending[c.id+"wag"]} className="pill pill-wag">{sending[c.id+"wag"]?"⏳":"👥"} {c.role==="Murid"&&c.kelas?c.kelas:"Guru/Staf"}</button>
                 </>
               ):(
                 <button onClick={()=>onWaManual(c)} className="pill pill-wa">💬 WhatsApp</button>
@@ -1654,29 +1701,8 @@ function UploadPreviewModal({parsed,existing,onClose,onImport}){
 /* ─── Settings ───────────────────────────────────────────────── */
 function Settings({settings,onSave,ssoUser,ssoConfigured,onSetupPin,onRemovePin,onExport}){
   const [local,setLocal]=useState(settings);
-  const [groups,setGroups]=useState([]);
-  const [fetching,setFetching]=useState(false);
-  const [fetchMsg,setFetchMsg]=useState("");
   useEffect(()=>setLocal(settings),[settings]);
   const set=(k,v)=>setLocal(s=>({...s,[k]:v}));
-
-  const fetchGroups=async()=>{
-    if(!local.fonnteToken){setFetchMsg("❌ Sila masukkan Token Fonnte dahulu.");return}
-    setFetching(true);setGroups([]);setFetchMsg("⏳ Mengemaskini senarai kumpulan...");
-    try{
-      await fetch("https://api.fonnte.com/fetch-group",{method:"POST",headers:{"Authorization":local.fonnteToken},body:new FormData()});
-      const r=await fetch("https://api.fonnte.com/get-whatsapp-group",{method:"POST",headers:{"Authorization":local.fonnteToken},body:new FormData()});
-      const d=await r.json();
-      if(d.status&&d.data?.length>0){setGroups(d.data);setFetchMsg(`✅ ${d.data.length} kumpulan ditemui:`)}
-      else if(d.status)setFetchMsg("⚠️ Tiada kumpulan ditemui.");
-      else setFetchMsg(`❌ Gagal: ${d.reason||d.detail||"Semak token"}`);
-    }catch{setFetchMsg("❌ Gagal sambung ke Fonnte.")}
-    setFetching(false);
-  };
-
-  const mColor=fetchMsg.startsWith("✅")?"#15803d":fetchMsg.startsWith("❌")?"#b91c1c":"#92400e";
-  const mBg=fetchMsg.startsWith("✅")?"#f0fdf4":fetchMsg.startsWith("❌")?"#fff0f0":"#fffbeb";
-  const mBdr=fetchMsg.startsWith("✅")?"#bbf7d0":fetchMsg.startsWith("❌")?"#fca5a5":"#fde68a";
 
   return(
     <div style={{maxWidth:520}}>
@@ -1761,36 +1787,33 @@ function Settings({settings,onSave,ssoUser,ssoConfigured,onSetupPin,onRemovePin,
           <input value={local.fonnteToken||""} onChange={e=>set("fonnteToken",e.target.value)} placeholder="Tampal token dari dashboard Fonnte..." style={{width:"100%",padding:"8px 11px",fontSize:13,border:"1.5px solid var(--border)",borderRadius:"var(--r-sm)",background:"var(--surface)",color:"var(--text)"}}/>
           <div style={{fontSize:11,color:"var(--text3)",marginTop:4}}>fonnte.com → Devices → klik nama device → salin Token</div>
         </div>
-        {local.waGroupId&&(
-          <div style={{background:"var(--accent-bg)",border:"1px solid var(--accent-border)",borderRadius:"var(--r-sm)",padding:"9px 12px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
-            <span style={{fontSize:16}}>👥</span>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:13,fontWeight:700,color:"var(--accent)"}}>{local.waGroupName||"Kumpulan dipilih"}</div>
-              <div style={{fontSize:10,color:"var(--text3)",wordBreak:"break-all"}}>{local.waGroupId}</div>
-            </div>
-            <button onClick={()=>{set("waGroupId","");set("waGroupName","");setGroups([]);setFetchMsg("")}} className="pill pill-del" style={{fontSize:11}}>Tukar</button>
+
+        {/* Jadual routing group WA mengikut kelas */}
+        <div style={{marginTop:4}}>
+          <div style={{fontSize:12,fontWeight:700,color:"var(--text2)",marginBottom:8,display:"flex",alignItems:"center",gap:6}}>
+            📱 Routing Group WhatsApp
+            <span style={{fontSize:10,fontWeight:600,color:"var(--accent)",background:"var(--accent-bg)",border:"1px solid var(--accent-border)",padding:"1px 7px",borderRadius:20}}>AUTO</span>
           </div>
-        )}
-        <button onClick={fetchGroups} disabled={fetching} className={fetching?"btn-secondary":"btn-dark"} style={{width:"100%",padding:"9px",fontSize:13,marginBottom:8}}>
-          {fetching?"⏳ Sedang mencari...":"🔍 Cari Kumpulan WhatsApp Saya"}
-        </button>
-        {fetchMsg&&<div style={{fontSize:12,padding:"7px 10px",borderRadius:"var(--r-sm)",marginBottom:8,background:mBg,color:mColor,border:`1px solid ${mBdr}`}}>{fetchMsg}</div>}
-        {groups.length>0&&(
-          <div style={{border:"1px solid var(--border)",borderRadius:"var(--r-sm)",overflow:"hidden"}}>
-            <div style={{fontSize:10,color:"var(--text3)",padding:"6px 12px",background:"var(--surface2)",borderBottom:"1px solid var(--border)",fontWeight:700,letterSpacing:"0.5px",textTransform:"uppercase"}}>Pilih Kumpulan Sekolah</div>
-            {groups.map((g,i)=>(
-              <div key={g.id} className="group-row" onClick={()=>{set("waGroupId",g.id);set("waGroupName",g.name);setFetchMsg(`✅ Dipilih: ${g.name}`)}}
-                style={{background:local.waGroupId===g.id?"var(--accent-bg)":"var(--surface)",borderTop:i>0?"1px solid var(--border)":"none"}}>
-                <div style={{width:32,height:32,borderRadius:"50%",background:"var(--purple-bg)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>👥</div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:13,fontWeight:600,color:"var(--text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{g.name}</div>
-                  <div style={{fontSize:10,color:"var(--text3)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{g.id}</div>
-                </div>
-                {local.waGroupId===g.id&&<span style={{color:"var(--accent)",fontSize:16}}>✓</span>}
+          <div style={{border:"1px solid var(--border)",borderRadius:"var(--r-sm)",overflow:"hidden",fontSize:12}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",background:"var(--surface2)",padding:"6px 10px",fontWeight:700,fontSize:10,color:"var(--text2)",textTransform:"uppercase",letterSpacing:"0.5px",borderBottom:"1px solid var(--border)"}}>
+              <span>Kelas / Peranan</span><span>Group WhatsApp</span>
+            </div>
+            {Object.entries(GROUP_KELAS).map(([kelas,gid],i)=>(
+              <div key={kelas} style={{display:"grid",gridTemplateColumns:"1fr 1fr",padding:"7px 10px",borderTop:i>0?"1px solid var(--border)":"none",background:"var(--surface)"}}>
+                <span style={{fontWeight:700,color:"var(--purple)"}}>{kelas}</span>
+                <span style={{color:"var(--text3)",fontSize:10,fontFamily:"'DM Mono',monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{gid}</span>
               </div>
             ))}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",padding:"7px 10px",borderTop:"1px solid var(--border)",background:"var(--info-bg)"}}>
+              <span style={{fontWeight:700,color:"var(--info)"}}>Guru & Staf</span>
+              <span style={{color:"var(--text3)",fontSize:10,fontFamily:"'DM Mono',monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{GROUP_SEKOLAH}</span>
+            </div>
           </div>
-        )}
+          <div style={{fontSize:11,color:"var(--text3)",marginTop:6,lineHeight:1.6}}>
+            ✅ Mesej murid dihantar ke group kelas masing-masing secara automatik.<br/>
+            ✅ Mesej guru & staf dihantar ke group rasmi sekolah.
+          </div>
+        </div>
       </div>
 
       {/* Telegram */}
@@ -1894,7 +1917,7 @@ function Settings({settings,onSave,ssoUser,ssoConfigured,onSetupPin,onRemovePin,
 
 /* ─── Form Modal ─────────────────────────────────────────────── */
 function FormModal({contact,onClose,onSave}){
-  const [f,setF]=useState(contact||{name:"",role:"Guru",dob:"",phone:"",notes:""});
+  const [f,setF]=useState(contact||{name:"",role:"Guru",dob:"",phone:"",kelas:"",notes:""});
   const set=(k,v)=>setF(x=>({...x,[k]:v}));
   return(
     <div className="modal-overlay" onClick={onClose}>
@@ -1912,13 +1935,38 @@ function FormModal({contact,onClose,onSave}){
             {ROLES.map(r=><option key={r}>{r}</option>)}
           </select>
         </div>
-        <div style={{marginBottom:16}}>
-          <label style={{fontSize:12,fontWeight:600,color:"var(--text2)",display:"block",marginBottom:5}}>Nota (pilihan)</label>
-          <textarea value={f.notes||""} onChange={e=>set("notes",e.target.value)} rows={2} placeholder="Maklumat tambahan..." style={{width:"100%",padding:"8px 11px",fontSize:13,border:"1.5px solid var(--border)",borderRadius:"var(--r-sm)",background:"var(--surface)",color:"var(--text)",resize:"vertical"}}/>
-        </div>
+        {f.role==="Murid"&&(
+          <div style={{marginBottom:11}}>
+            <label style={{fontSize:12,fontWeight:600,color:"var(--text2)",display:"block",marginBottom:5}}>Kelas *</label>
+            <select value={f.kelas||""} onChange={e=>set("kelas",e.target.value)} style={{width:"100%",padding:"8px 11px",fontSize:13,border:"1.5px solid var(--border)",borderRadius:"var(--r-sm)",background:"var(--surface)",color:"var(--text)"}}>
+              <option value="">— Pilih Kelas —</option>
+              {KELAS_LIST.map(k=><option key={k} value={k}>{k}</option>)}
+            </select>
+            {f.kelas&&(
+              <div style={{fontSize:11,marginTop:4,color:"var(--accent)",fontWeight:600}}>
+                📱 Mesej akan dihantar ke group WA: <strong>{f.kelas}</strong>
+              </div>
+            )}
+          </div>
+        )}
+        {f.role!=="Murid"&&(
+          <div style={{marginBottom:11}}>
+            <label style={{fontSize:12,fontWeight:600,color:"var(--text2)",display:"block",marginBottom:5}}>Nota (pilihan)</label>
+            <input value={f.notes||""} onChange={e=>set("notes",e.target.value)} placeholder="Contoh: Guru Matematik, Pembantu Tadbir..." style={{width:"100%",padding:"8px 11px",fontSize:13,border:"1.5px solid var(--border)",borderRadius:"var(--r-sm)",background:"var(--surface)",color:"var(--text)"}}/>
+          </div>
+        )}
+        {f.role!=="Murid"&&(
+          <div style={{fontSize:11,padding:"7px 10px",background:"var(--info-bg)",border:"1px solid var(--info-border)",borderRadius:"var(--r-sm)",marginBottom:12,color:"var(--info)"}}>
+            📱 Mesej akan dihantar ke group WA: <strong>Guru & Staf SK Kiandongo</strong>
+          </div>
+        )}
         <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
           <button onClick={onClose} className="btn-secondary" style={{padding:"8px 14px",fontSize:13}}>Batal</button>
-          <button onClick={()=>{if(!f.name||!f.dob){alert("Sila isi nama dan tarikh lahir.");return}onSave(f)}} className="btn-primary" style={{padding:"8px 18px",fontSize:13}}>Simpan</button>
+          <button onClick={()=>{
+            if(!f.name||!f.dob){alert("Sila isi nama dan tarikh lahir.");return}
+            if(f.role==="Murid"&&!f.kelas){alert("Sila pilih kelas untuk murid.");return}
+            onSave(f)
+          }} className="btn-primary" style={{padding:"8px 18px",fontSize:13}}>Simpan</button>
         </div>
       </div>
     </div>
